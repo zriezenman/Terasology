@@ -20,6 +20,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.util.vector.Matrix4f;
 import org.newdawn.slick.util.ResourceLoader;
 import org.terasology.logic.manager.Config;
 import org.terasology.logic.manager.ShaderManager;
@@ -221,6 +222,17 @@ public class ShaderProgram {
         enable();
         int id = GL20.glGetUniformLocation(_shaderProgram, desc);
         GL20.glUniform1(id, buffer);
+    }
+
+    public void setMatrix4(String desc, Matrix4f m) {
+        enable();
+        int id = GL20.glGetUniformLocation(_shaderProgram, desc);
+
+        FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
+        m.store(buffer);
+        buffer.flip();
+
+        GL20.glUniformMatrix4(id, false, buffer);
     }
 
     public IShaderParameters getShaderParameters() {

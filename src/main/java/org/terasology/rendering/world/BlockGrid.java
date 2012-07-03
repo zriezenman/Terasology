@@ -16,10 +16,12 @@
 package org.terasology.rendering.world;
 
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.game.CoreRegistry;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.Vector3i;
 import org.terasology.model.structures.BlockPosition;
+import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.interfaces.IGameObject;
 import org.terasology.rendering.primitives.Mesh;
 import org.terasology.rendering.primitives.Tessellator;
@@ -83,6 +85,10 @@ public class BlockGrid implements IGameObject {
                 GL11.glPopMatrix();
             }
         }
+    }
+
+    @Override
+    public void render(Matrix4f m, Matrix4f vm) {
     }
 
     /**

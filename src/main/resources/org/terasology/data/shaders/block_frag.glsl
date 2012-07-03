@@ -21,10 +21,17 @@ uniform vec3 colorOffset;
 uniform bool textured;
 uniform bool carryingTorch;
 
+uniform float clipHeight;
+
 varying vec3 normal;
 varying vec4 vertexWorldPos;
+varying vec4 vertexWorldPosRaw;
 
 void main(){
+	if (clipHeight > 0 && vertexWorldPosRaw.y < clipHeight) {
+        discard;
+	}
+
     vec4 color;
 
     if (textured) {

@@ -16,13 +16,18 @@
 
 varying vec3 normal;
 varying vec4 vertexWorldPos;
+varying vec4 vertexWorldPosRaw;
+
+uniform mat4 viewMatrix;
+uniform mat4 modelMatrix;
 
 void main()
 {
-	vertexWorldPos = gl_ModelViewMatrix * gl_Vertex;
+	vertexWorldPos = viewMatrix * modelMatrix * gl_Vertex;
+	vertexWorldPosRaw = modelMatrix * gl_Vertex;
     normal = gl_NormalMatrix * gl_Normal;
 
-	gl_Position = ftransform();
+	gl_Position = gl_ProjectionMatrix * vertexWorldPos;
     gl_TexCoord[0] = gl_MultiTexCoord0;
     gl_FrontColor = gl_Color;
 }

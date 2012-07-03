@@ -15,12 +15,17 @@
  */
 package org.terasology.rendering.cameras;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.glu.GLU;
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
 import org.terasology.math.TeraMath;
 
 import javax.vecmath.Vector3d;
+
+import java.nio.FloatBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.util.glu.GLU.gluPerspective;
@@ -43,24 +48,53 @@ public class DefaultCamera extends Camera {
         glMatrixMode(GL11.GL_MODELVIEW);
     }
 
-    public void loadModelViewMatrix() {
+    public void loadViewMatrix() {
+        loadMatrix(calcViewMatrix());
+    }
+
+    public void loadNormalizedViewMatrix() {
+        loadMatrix(calcNormalizedViewMatrix());
+    }
+
+    public void loadMatrix(Matrix4f m) {
         glMatrixMode(GL11.GL_MODELVIEW);
         glLoadIdentity();
-        Vector3d right = new Vector3d();
-        right.cross(_viewingDirection, _up);
-        right.scale(_bobbingRotationOffsetFactor);
-        GLU.gluLookAt(0f, (float) _bobbingVerticalOffsetFactor * 2.0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y + (float) _bobbingVerticalOffsetFactor * 2.0f, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
+
+        FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
+        m.store(buffer);
+        buffer.flip();
+
+        glLoadMatrix(buffer);
         _viewFrustum.updateFrustum();
     }
 
-    public void loadNormalizedModelViewMatrix() {
-        glMatrixMode(GL11.GL_MODELVIEW);
-        glLoadIdentity();
+    public Matrix4f calcViewMatrix() {
         Vector3d right = new Vector3d();
         right.cross(_viewingDirection, _up);
         right.scale(_bobbingRotationOffsetFactor);
-        GLU.gluLookAt(0f, 0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
-        _viewFrustum.updateFrustum();
+
+        Matrix4f vm = TeraMath.createViewMatrix(0f, (float) _bobbingVerticalOffsetFactor * 2.0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y + (float) _bobbingVerticalOffsetFactor * 2.0f, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
+
+        if (_reflected) {
+            vm.translate(new Vector3f(0.0f, 2f * ((float) -_position.y + 32f), 0.0f));
+            vm.scale(new Vector3f(1.0f, -1.0f, 1.0f));
+        }
+
+        return vm;
+    }
+
+    public Matrix4f calcNormalizedViewMatrix() {
+        Vector3d right = new Vector3d();
+        right.cross(_viewingDirection, _up);
+        right.scale(_bobbingRotationOffsetFactor);
+
+        Matrix4f vm = TeraMath.createViewMatrix(0f, 0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
+
+        if (_reflected) {
+            vm.scale(new Vector3f(1.0f, -1.0f, 1.0f));
+        }
+
+        return vm;
     }
 
     public void setBobbingRotationOffsetFactor(double f) {

@@ -24,9 +24,8 @@ varying vec3 eyeVec;
 varying vec3 lightDir;
 
 varying float flickering;
-varying float flickeringAlternative;
 
-uniform float blockScale = 1.0;
+uniform float blockScale;
 
 uniform float time;
 uniform float wavingCoordinates[WAVING_COORDINATE_COUNT];
@@ -52,11 +51,9 @@ void main()
     gl_FrontColor = gl_Color;
 
 #ifdef FLICKERING_LIGHT
-	flickering = smoothTriangleWave(timeToTick(time, 1.0)) / 64.0;
-	flickeringAlternative = smoothTriangleWave(timeToTick(time, 1.0) + 0.37281) / 64.0;
+	flickering = smoothTriangleWave(timeToTick(time, 1.0) + 0.37281) / 64.0;
 #else
 	flickering = 0.0;
-	flickeringAlternative = 0.0f;
 #endif
 
 #ifdef ANIMATED_WATER_AND_GRASS

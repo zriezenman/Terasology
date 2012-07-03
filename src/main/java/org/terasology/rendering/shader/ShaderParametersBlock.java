@@ -21,6 +21,7 @@ import org.terasology.game.CoreRegistry;
 import org.terasology.logic.LocalPlayer;
 import org.terasology.logic.manager.AssetManager;
 import org.terasology.rendering.assets.Texture;
+import org.terasology.rendering.world.WorldRenderer;
 
 import static org.lwjgl.opengl.GL11.glBindTexture;
 
@@ -41,11 +42,15 @@ public class ShaderParametersBlock implements IShaderParameters {
         if (terrainTex == null) {
             terrainTex = AssetManager.loadTexture("engine:terrain");
         }
+        WorldRenderer worldRenderer = CoreRegistry.get(WorldRenderer.class);
+
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         glBindTexture(GL11.GL_TEXTURE_2D, terrainTex.getId());
 
         LocalPlayer localPlayer = CoreRegistry.get(LocalPlayer.class);
         program.setInt("carryingTorch", localPlayer.isCarryingTorch() ? 1 : 0);
+
+        program.setFloat("clipHeight", worldRenderer.getActiveCamera().getClipHeight());
 
         program.setFloat3("colorOffset", 1.0f, 1.0f, 1.0f);
         program.setInt("textured", 1);

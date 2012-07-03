@@ -413,7 +413,7 @@ public final class Config {
     }
 
     public boolean isComplexWater() {
-        return false;
+        return true;
     }
 
     /* MODS */

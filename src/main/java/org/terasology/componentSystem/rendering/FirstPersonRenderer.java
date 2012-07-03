@@ -2,6 +2,7 @@ package org.terasology.componentSystem.rendering;
 
 import com.google.common.collect.Maps;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.componentSystem.RenderSystem;
 import org.terasology.components.CharacterMovementComponent;
 import org.terasology.components.InventoryComponent;
@@ -103,6 +104,7 @@ public class FirstPersonRenderer implements RenderSystem {
 
     }
 
+    // TODO: Needs to use local matrices
     private void renderHand(float bobOffset, float handMovementAnimationOffset) {
         ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("block");
         shader.enable();
@@ -121,6 +123,7 @@ public class FirstPersonRenderer implements RenderSystem {
         glPopMatrix();
     }
 
+    // TODO: Needs to use local matrices
     private void renderIcon(String iconName, float bobOffset, float handMovementAnimationOffset) {
         ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("block");
         shader.enable();
@@ -169,16 +172,18 @@ public class FirstPersonRenderer implements RenderSystem {
             glEnable(GL11.GL_ALPHA_TEST);
         }
 
-        glPushMatrix();
+        Matrix4f viewMatrix = new Matrix4f();
+        viewMatrix.setIdentity();
 
-        glTranslatef(1.0f, -0.7f + bobOffset - handMovementAnimationOffset * 0.5f, -1.5f - handMovementAnimationOffset * 0.5f);
-        glRotatef(-25f - handMovementAnimationOffset * 64.0f, 1.0f, 0.0f, 0.0f);
-        glRotatef(35f, 0.0f, 1.0f, 0.0f);
-        glTranslatef(0f, 0.25f, 0f);
+        Matrix4f modelMatrix = new Matrix4f();
+        modelMatrix.setIdentity();
 
-        activeBlock.renderWithLightValue(worldRenderer.getRenderingLightValue());
+        modelMatrix.translate(new org.lwjgl.util.vector.Vector3f(1.0f, -0.7f + bobOffset - handMovementAnimationOffset * 0.5f, -1.5f - handMovementAnimationOffset * 0.5f));
+        modelMatrix.rotate(TeraMath.DEG_TO_RAD * (-25f - handMovementAnimationOffset * 64.0f), new org.lwjgl.util.vector.Vector3f(1.0f, 0.0f, 0.0f));
+        modelMatrix.rotate(TeraMath.DEG_TO_RAD * 35f, new org.lwjgl.util.vector.Vector3f(0.0f, 1.0f, 0.0f));
+        modelMatrix.translate(new org.lwjgl.util.vector.Vector3f(0f, 0.25f, 0f));
 
-        glPopMatrix();
+        activeBlock.renderWithLightValue(worldRenderer.getRenderingLightValue(), modelMatrix, viewMatrix);
 
         if (activeBlock.isTranslucent()) {
             glDisable(GL11.GL_ALPHA_TEST);

@@ -16,6 +16,8 @@
 package org.terasology.model.blocks;
 
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector3f;
 import org.newdawn.slick.util.ResourceLoader;
 import org.terasology.collection.EnumBooleanMap;
 import org.terasology.logic.manager.ShaderManager;
@@ -23,6 +25,7 @@ import org.terasology.math.Side;
 import org.terasology.model.shapes.BlockMeshPart;
 import org.terasology.model.structures.AABB;
 import org.terasology.model.structures.BlockPosition;
+import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.interfaces.IGameObject;
 import org.terasology.rendering.primitives.Mesh;
 import org.terasology.rendering.primitives.Tessellator;
@@ -250,13 +253,16 @@ public class Block implements IGameObject {
         return new Vector2f(pos.x * TEXTURE_OFFSET, pos.y * TEXTURE_OFFSET);
     }
 
-    public void renderWithLightValue(float light) {
+    public void renderWithLightValue(float light, Matrix4f m, Matrix4f vm) {
         if (isInvisible())
             return;
 
         ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("block");
         shader.enable();
         shader.setFloat("light", light);
+
+        shader.setMatrix4("modelMatrix", m);
+        shader.setMatrix4("viewMatrix", vm);
 
         if (_mesh == null) {
             Tessellator tessellator = new Tessellator();
@@ -286,7 +292,11 @@ public class Block implements IGameObject {
 
     @Override
     public void render() {
-        renderWithLightValue(1.0f);
+    }
+
+    @Override
+    public void render(Matrix4f m, Matrix4f vm) {
+        renderWithLightValue(1.0f, m, vm);
     }
 
     @Override

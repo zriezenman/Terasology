@@ -35,24 +35,25 @@ varying vec3 lightDir;
 varying vec3 normal;
 
 varying float flickering;
-varying float flickeringAlternative;
 
 uniform vec3 chunkOffset;
 uniform vec2 waterCoordinate;
 uniform vec2 lavaCoordinate;
 uniform vec2 grassCoordinate;
 
+uniform float blockScale;
+
 #define DAYLIGHT_AMBIENT_COLOR 0.95, 0.92, 0.91
 #define MOONLIGHT_AMBIENT_COLOR 0.8, 0.8, 1.0
 #define NIGHT_BRIGHTNESS 0.05
 #define WATER_COLOR 0.325, 0.419, 0.525, 0.75
-#define REFLECTION_COLOR 0.95, 0.97, 1.0, 0.75
+#define REFLECTION_COLOR 0.05, 0.05, 0.1, 1.0
 
-#define TORCH_WATER_SPEC 8.0
-#define TORCH_WATER_DIFF 0.7
-#define TORCH_BLOCK_SPEC 0.7
+#define TORCH_WATER_SPEC 4.0
+#define TORCH_WATER_DIFF 1.0
+#define TORCH_BLOCK_SPEC 2.0
 #define TORCH_BLOCK_DIFF 1.0
-#define WATER_SPEC 2.0
+#define WATER_SPEC 8.0
 #define WATER_DIFF 1.0
 #define BLOCK_DIFF 0.25
 #define BLOCK_AMB 1.0
@@ -66,7 +67,7 @@ void main(){
 
     vec4 texCoord = gl_TexCoord[0];
 
-    vec3 normalizedVPos = -normalize(vertexWorldPos.xyz);
+    vec3 normalizedVPos = normalize(eyeVec);
     vec3 normalWater;
     bool isWater = false;
 
@@ -81,24 +82,32 @@ void main(){
 
     /* APPLY WATER TEXTURE */
     if (texCoord.x >= waterCoordinate.x && texCoord.x < waterCoordinate.x + TEXTURE_OFFSET && texCoord.y >= waterCoordinate.y && texCoord.y < waterCoordinate.y + TEXTURE_OFFSET) {
-        vec2 waterOffset = vec2(vertexWorldPosRaw.x + timeToTick(time, 0.1), vertexWorldPosRaw.z + timeToTick(time, 0.1)) / 8.0;
-        vec2 waterOffsetLarge = vec2(vertexWorldPosRaw.x - timeToTick(time, 0.1), vertexWorldPosRaw.z + timeToTick(time, 0.1)) / 16.0;
+        vec2 waterOffset = vec2(vertexWorldPosRaw.x + timeToTick(time, 0.1), vertexWorldPosRaw.z + timeToTick(time, 0.1)) / 8.0 / blockScale;
+        vec2 waterOffsetLarge = vec2(vertexWorldPosRaw.x - timeToTick(time, 0.1), vertexWorldPosRaw.z + timeToTick(time, 0.1)) / 16.0 / blockScale;
 
         normalWater = (texture2D(textureWaterNormal, waterOffset) * 2.0 - 1.0).xyz;
 
 #ifdef COMPLEX_WATER
-        vec3 normalWaterLarge = (texture2D(textureWaterNormal, waterOffsetLarge) * 2.0 - 1.0).xyz;
+        if (blockScale == 1.0) {
+            vec3 normalWaterLarge = (texture2D(textureWaterNormal, waterOffsetLarge) * 2.0 - 1.0).xyz;
 
-        vec2 projectedPos = 0.5 * (vertexPos.st/vertexPos.q) + vec2(0.5);
-        normalWater = mix(normalWater, normalWaterLarge, clamp(0.5 + length(projectedPos), 0.0, 1.0));
+            vec2 projectedPos = 0.5 * (vertexPos.st/vertexPos.q) + vec2(0.5);
+            normalWater = mix(normalWater, normalWaterLarge, clamp(0.5 + length(projectedPos), 0.0, 1.0));
 
-        color = texture2D(textureWaterReflection, projectedPos + normalWater.xy * WATER_REFRACTION) * vec4(REFLECTION_COLOR);
+            color = texture2D(textureWaterReflection, projectedPos + normalWater.xy * WATER_REFRACTION) + vec4(REFLECTION_COLOR);
 
-        // Fresnel
-        color = mix(color, vec4(WATER_COLOR), clamp(dot(vec3(0.0, 1.0, 0.0), normalize(eyeVec)), 0.0, 1.0));
-#else
-        color = vec4(WATER_COLOR);
+            // Fresnel
+            vec3 halfWayVec = normalize(vec3(0.0, 1.0, 0.0) + normalizedVPos);
+            float f =  pow(1.0 - dot(normalizedVPos, halfWayVec), 4.0);
+
+            // This is a simplified refraction approach for the moment
+            color.a = clamp(f + 0.5, 0.5, 1.0);
+        }
+        else
 #endif
+        {
+            color = vec4(WATER_COLOR);
+        }
 
         isWater = true;
     /* APPLY LAVA TEXTURE */
@@ -186,9 +195,8 @@ void main(){
     // Calculate the final block light brightness
     float blockBrightness = (expLightValue(blocklightValue) + diffuseLighting * blocklightValue * BLOCK_DIFF);
 
-    torchlight -= flickeringAlternative * torchlight;
-
-    blockBrightness += (1.0 - blockBrightness) * torchlight;
+    torchlight -= flickering * torchlight;
+    blockBrightness += torchlight;
     blockBrightness -= flickering * blocklightValue;
     blockBrightness *= blocklightDayIntensity;
 
@@ -197,5 +205,6 @@ void main(){
 
     // Apply the final lighting mix
     color.xyz *= (daylightColorValue + blocklightColorValue) * occlusionValue;
+
     gl_FragColor = color;
 }

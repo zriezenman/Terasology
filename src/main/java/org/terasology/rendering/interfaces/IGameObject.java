@@ -15,6 +15,9 @@
  */
 package org.terasology.rendering.interfaces;
 
+import org.lwjgl.util.vector.Matrix4f;
+import org.terasology.rendering.cameras.Camera;
+
 /**
  * The base class of all game objects.
  *
@@ -26,6 +29,11 @@ public interface IGameObject {
      * Rendering operations have to implement this method.
      */
     public void render();
+
+    /**
+     * Rendering operations have to implement this method.
+     */
+    public void render(Matrix4f m, Matrix4f vm);
 
     /**
      * Updating operations have to implement this method.

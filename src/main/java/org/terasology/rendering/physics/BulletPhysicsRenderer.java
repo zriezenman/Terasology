@@ -50,6 +50,7 @@ import org.terasology.logic.manager.AudioManager;
 import org.terasology.logic.world.Chunk;
 import org.terasology.model.blocks.Block;
 import org.terasology.model.blocks.management.BlockManager;
+import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.interfaces.IGameObject;
 import org.terasology.rendering.primitives.ChunkMesh;
 import org.terasology.rendering.world.WorldRenderer;
@@ -301,11 +302,10 @@ public class BulletPhysicsRenderer implements IGameObject {
 
     @Override
     public void render() {
-        FloatBuffer mBuffer = BufferUtils.createFloatBuffer(16);
-        float[] mFloat = new float[16];
-        GL11.glPushMatrix();
         Vector3d cameraPosition = _parent.getActiveCamera().getPosition();
-        GL11.glTranslated(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
+
+        float[] mFloat = new float[16];
+
         List<CollisionObject> collisionObjects = _discreteDynamicsWorld.getCollisionObjectArray();
         for (CollisionObject co : collisionObjects) {
             if (co.getClass().equals(BlockRigidBody.class)) {
@@ -314,19 +314,30 @@ public class BulletPhysicsRenderer implements IGameObject {
                 Transform t = new Transform();
                 br.getMotionState().getWorldTransform(t);
                 t.getOpenGLMatrix(mFloat);
+
+                FloatBuffer mBuffer = BufferUtils.createFloatBuffer(16);
                 mBuffer.put(mFloat);
                 mBuffer.flip();
-                GL11.glPushMatrix();
-                GL11.glMultMatrix(mBuffer);
+
+                org.lwjgl.util.vector.Matrix4f modelMatrix = new org.lwjgl.util.vector.Matrix4f();
+                modelMatrix.load(mBuffer);
+
+                org.lwjgl.util.vector.Matrix4f vm = CoreRegistry.get(WorldRenderer.class).getActiveCamera().calcViewMatrix();
+                vm.translate(new org.lwjgl.util.vector.Vector3f((float) -cameraPosition.x, (float)  -cameraPosition.y, (float)  -cameraPosition.z));
+
                 if (br.getCollisionShape() == _blockShapeHalf)
-                    GL11.glScalef(0.5f, 0.5f, 0.5f);
+                    modelMatrix.scale(new org.lwjgl.util.vector.Vector3f(0.5f, 0.5f, 0.5f));
                 else if (br.getCollisionShape() == _blockShapeQuarter)
-                    GL11.glScalef(0.25f, 0.25f, 0.25f);
-                block.renderWithLightValue(_parent.getRenderingLightValueAt(t.origin));
-                GL11.glPopMatrix();
+                    modelMatrix.scale(new org.lwjgl.util.vector.Vector3f(0.25f, 0.25f, 0.25f));
+
+                block.renderWithLightValue(_parent.getRenderingLightValueAt(t.origin), modelMatrix, vm);
             }
         }
-        GL11.glPopMatrix();
+    }
+
+    @Override
+    public void render(org.lwjgl.util.vector.Matrix4f m, org.lwjgl.util.vector.Matrix4f vm) {
+
     }
 
     @Override

@@ -19,6 +19,7 @@ import com.google.common.collect.Lists;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.componentSystem.RenderSystem;
 import org.terasology.componentSystem.controllers.LocalPlayerSystem;
 import org.terasology.components.AABBCollisionComponent;
@@ -472,8 +473,6 @@ public final class WorldRenderer implements IGameObject {
 
         if (_cameraMode == CAMERA_MODE.PLAYER) {
             glClear(GL_DEPTH_BUFFER_BIT);
-            glPushMatrix();
-            glLoadIdentity();
             _activeCamera.loadProjectionMatrix(80f);
 
             PerformanceMonitor.startActivity("Render First Person");
@@ -481,9 +480,11 @@ public final class WorldRenderer implements IGameObject {
                 renderer.renderFirstPerson();
             }
             PerformanceMonitor.endActivity();
-
-            glPopMatrix();
         }
+    }
+
+    @Override
+    public void render(Matrix4f m, Matrix4f vm) {
     }
 
     public void renderWorld(Camera camera) {
@@ -541,16 +542,6 @@ public final class WorldRenderer implements IGameObject {
 
         PerformanceMonitor.endActivity();
 
-        PerformanceMonitor.startActivity("Render Transparent");
-
-        while (_renderQueueTransparent.size() > 0)
-            _renderQueueTransparent.poll().render();
-        for (RenderSystem renderer : _systemManager.iterateRenderSubscribers()) {
-            renderer.renderTransparent();
-        }
-
-        PerformanceMonitor.endActivity();
-
         PerformanceMonitor.startActivity("Render ChunkWaterIce");
 
         // Make sure the water surface is rendered if the player is swimming
@@ -575,6 +566,16 @@ public final class WorldRenderer implements IGameObject {
                 }
             }
         }
+
+        PerformanceMonitor.startActivity("Render Transparent");
+
+        while (_renderQueueTransparent.size() > 0)
+            _renderQueueTransparent.poll().render();
+        for (RenderSystem renderer : _systemManager.iterateRenderSubscribers()) {
+            renderer.renderTransparent();
+        }
+
+        PerformanceMonitor.endActivity();
 
         for (RenderSystem renderer : _systemManager.iterateRenderSubscribers()) {
             renderer.renderOverlay();
@@ -624,7 +625,6 @@ public final class WorldRenderer implements IGameObject {
             // Transfer the world offset of the chunk to the shader for various effects
             shader.setFloat3("chunkOffset", (float) (chunk.getPos().x * Chunk.SIZE_X), (float) (chunk.getPos().y * Chunk.SIZE_Y), (float) (chunk.getPos().z * Chunk.SIZE_Z));
             shader.setFloat("animated", chunk.getAnimated() ? 1.0f: 0.0f);
-            shader.setFloat("clipHeight", camera.getClipHeight());
 
             GL11.glPushMatrix();
 

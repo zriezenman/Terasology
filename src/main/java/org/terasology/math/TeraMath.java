@@ -15,7 +15,10 @@
  */
 package org.terasology.math;
 
+import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.logic.world.Chunk;
+
+import javax.vecmath.Vector3f;
 
 /**
  * Collection of math functions.
@@ -344,5 +347,48 @@ public final class TeraMath {
     public static int ceilToInt(float val) {
         int i = (int) val;
         return (val >= 0 && val != i) ? i + 1 : i;
+    }
+
+    public static Matrix4f createViewMatrix(float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ) {
+         return createViewMatrix(new Vector3f(eyeX, eyeY, eyeZ), new Vector3f(centerX, centerY, centerZ), new Vector3f(upX, upY, upZ));
+    }
+
+    public static Matrix4f createViewMatrix(Vector3f eye, Vector3f center, Vector3f up) {
+        Matrix4f m = new Matrix4f();
+
+        Vector3f f = new Vector3f();
+        f.sub(center, eye);
+
+        f.normalize();
+        up.normalize();
+
+        Vector3f s = new Vector3f();
+        s.cross(f, up);
+        s.normalize();
+
+        Vector3f u = new Vector3f();
+        u.cross(s, f);
+        u.normalize();
+
+        m.m00 = s.x;
+        m.m10 = s.y;
+        m.m20 = s.z;
+        m.m30 = 0;
+        m.m01 = u.x;
+        m.m11 = u.y;
+        m.m21 = u.z;
+        m.m31 = 0;
+        m.m02 = -f.x;
+        m.m12 = -f.y;
+        m.m22 = -f.z;
+        m.m32 = 0;
+        m.m03 = 0;
+        m.m13 = 0;
+        m.m23 = 0;
+        m.m33 = 1;
+
+        m.translate(new org.lwjgl.util.vector.Vector3f(-eye.x, -eye.y, -eye.z));
+
+        return m;
     }
 }

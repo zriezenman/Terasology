@@ -15,6 +15,7 @@
  */
 package org.terasology.rendering.cameras;
 
+import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.logic.manager.Config;
 import org.terasology.model.structures.ViewFrustum;
 
@@ -48,12 +49,7 @@ public abstract class Camera {
      */
     public void lookThrough() {
         loadProjectionMatrix();
-        loadModelViewMatrix();
-
-        if (_reflected) {
-            glTranslatef(0.0f, 2f * ((float) -_position.y + 32f), 0.0f);
-            glScalef(1.0f, -1.0f, 1.0f);
-        }
+        loadViewMatrix();
     }
 
 
@@ -62,7 +58,7 @@ public abstract class Camera {
      */
     public void lookThroughNormalized() {
         loadProjectionMatrix();
-        loadNormalizedModelViewMatrix();
+        loadNormalizedViewMatrix();
     }
 
     public abstract void loadProjectionMatrix(float fov);
@@ -71,9 +67,15 @@ public abstract class Camera {
         loadProjectionMatrix(_activeFov);
     }
 
-    public abstract void loadModelViewMatrix();
+    public abstract void loadViewMatrix();
 
-    public abstract void loadNormalizedModelViewMatrix();
+    public abstract void loadNormalizedViewMatrix();
+
+    public abstract Matrix4f calcViewMatrix();
+
+    public abstract Matrix4f calcNormalizedViewMatrix();
+
+    public abstract void loadMatrix(Matrix4f m);
 
     public Vector3d getPosition() {
         return _position;

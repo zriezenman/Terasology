@@ -20,12 +20,14 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.glu.Sphere;
+import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.game.CoreRegistry;
 import org.terasology.game.Timer;
 import org.terasology.logic.manager.AssetManager;
 import org.terasology.logic.manager.Config;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.TeraMath;
+import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.interfaces.IGameObject;
 import org.terasology.rendering.shader.ShaderProgram;
 import org.terasology.utilities.PerlinNoise;
@@ -129,6 +131,10 @@ public class Skysphere implements IGameObject {
         glDisable(GL13.GL_TEXTURE_CUBE_MAP);
         glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
+    }
+
+    @Override
+    public void render(Matrix4f m, Matrix4f vm) {
     }
 
     private Vector3d getAllWeatherZenith(float thetaSun) {
