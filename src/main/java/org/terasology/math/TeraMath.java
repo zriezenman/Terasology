@@ -15,10 +15,17 @@
  */
 package org.terasology.math;
 
+import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.logic.world.Chunk;
 
 import javax.vecmath.Vector3f;
+
+import static org.lwjgl.opengl.GL11.GL_PROJECTION;
+import static org.lwjgl.opengl.GL11.glLoadIdentity;
+import static org.lwjgl.opengl.GL11.glMatrixMode;
+import static org.lwjgl.util.glu.GLU.gluPerspective;
 
 /**
  * Collection of math functions.
@@ -359,35 +366,36 @@ public final class TeraMath {
         Vector3f f = new Vector3f();
         f.sub(center, eye);
 
-        f.normalize();
-        up.normalize();
+        f.normalize(); up.normalize();
 
         Vector3f s = new Vector3f();
-        s.cross(f, up);
-        s.normalize();
+        s.cross(f, up); s.normalize();
 
         Vector3f u = new Vector3f();
-        u.cross(s, f);
-        u.normalize();
+        u.cross(s, f); u.normalize();
 
-        m.m00 = s.x;
-        m.m10 = s.y;
-        m.m20 = s.z;
-        m.m30 = 0;
-        m.m01 = u.x;
-        m.m11 = u.y;
-        m.m21 = u.z;
-        m.m31 = 0;
-        m.m02 = -f.x;
-        m.m12 = -f.y;
-        m.m22 = -f.z;
-        m.m32 = 0;
-        m.m03 = 0;
-        m.m13 = 0;
-        m.m23 = 0;
-        m.m33 = 1;
+        m.m00 = s.x; m.m10 = s.y; m.m20 = s.z; m.m30 = 0;
+        m.m01 = u.x; m.m11 = u.y; m.m21 = u.z; m.m31 = 0;
+        m.m02 = -f.x; m.m12 = -f.y; m.m22 = -f.z; m.m32 = 0;
+        m.m03 = 0; m.m13 = 0; m.m23 = 0; m.m33 = 1;
 
         m.translate(new org.lwjgl.util.vector.Vector3f(-eye.x, -eye.y, -eye.z));
+
+        return m;
+    }
+
+    public static Matrix4f createProjectionMatrix(float fov, float zNear, float zFar) {
+        Matrix4f m = new Matrix4f();
+
+        float aspectRatio = (float) Display.getWidth() / Display.getHeight();
+        float fovY = (float) (2 * Math.atan2(Math.tan(0.5 * fov * TeraMath.DEG_TO_RAD), aspectRatio));
+
+        float f = 1.0f / (float) Math.tan(fovY * 0.5f);
+
+        m.m00 = f / aspectRatio; m.m10 = 0; m.m20 = 0; m.m30 = 0;
+        m.m01 = 0; m.m11 = f; m.m21 = 0; m.m31 = 0;
+        m.m02 = 0; m.m12 = 0; m.m22 = (zFar + zNear) / (zNear - zFar); m.m32 = (2*zFar*zNear) / (zNear - zFar);
+        m.m03 = 0; m.m13 = 0; m.m23 = -1; m.m33 = 0;
 
         return m;
     }

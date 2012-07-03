@@ -21,8 +21,7 @@ import org.terasology.game.CoreRegistry;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.Vector3i;
 import org.terasology.model.structures.BlockPosition;
-import org.terasology.rendering.cameras.Camera;
-import org.terasology.rendering.interfaces.IGameObject;
+import org.terasology.rendering.interfaces.Renderable;
 import org.terasology.rendering.primitives.Mesh;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;
@@ -38,7 +37,7 @@ import static org.lwjgl.opengl.GL11.glColorMask;
  *
  * @author Benjamin Glatzel <benjamin.glatzel@me.com>
  */
-public class BlockGrid implements IGameObject {
+public class BlockGrid implements Renderable {
 
     public class GridPosition {
         public GridPosition(Vector3i position, byte blockType) {
@@ -64,7 +63,7 @@ public class BlockGrid implements IGameObject {
     }
 
     @Override
-    public void render() {
+    public void render(Matrix4f m, Matrix4f vm, boolean reflected) {
         ShaderManager.getInstance().enableDefault();
 
         for (int i = 0; i < 2; i++) {
@@ -85,10 +84,6 @@ public class BlockGrid implements IGameObject {
                 GL11.glPopMatrix();
             }
         }
-    }
-
-    @Override
-    public void render(Matrix4f m, Matrix4f vm) {
     }
 
     /**

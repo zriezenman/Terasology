@@ -46,7 +46,7 @@ import org.terasology.model.structures.BlockPosition;
 import org.terasology.performanceMonitor.PerformanceMonitor;
 import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.cameras.DefaultCamera;
-import org.terasology.rendering.interfaces.IGameObject;
+import org.terasology.rendering.interfaces.Renderable;
 import org.terasology.rendering.physics.BulletPhysicsRenderer;
 import org.terasology.rendering.primitives.ChunkMesh;
 import org.terasology.rendering.primitives.ChunkTessellator;
@@ -74,7 +74,7 @@ import static org.lwjgl.opengl.GL11.*;
  *
  * @author Benjamin Glatzel <benjamin.glatzel@me.com>
  */
-public final class WorldRenderer implements IGameObject {
+public final class WorldRenderer implements Renderable {
     public static final int MAX_ANIMATED_CHUNKS = 64;
     public static final int MAX_BILLBOARD_CHUNKS = 64;
     public static final int VERTICAL_SEGMENTS = Config.getInstance().getVerticalChunkMeshSegments();
@@ -106,7 +106,7 @@ public final class WorldRenderer implements IGameObject {
     private int _chunkPosX, _chunkPosZ;
 
     /* RENDERING */
-    private final LinkedList<IGameObject> _renderQueueTransparent = Lists.newLinkedList();
+    private final LinkedList<Renderable> _renderQueueTransparent = Lists.newLinkedList();
     private final LinkedList<Chunk> _renderQueueChunksOpaque = Lists.newLinkedList();
     private final PriorityQueue<Chunk> _renderQueueChunksSortedWater = new PriorityQueue<Chunk>(16 * 16, new ChunkProximityComparator());
     private final PriorityQueue<Chunk> _renderQueueChunksSortedBillboards = new PriorityQueue<Chunk>(16 * 16, new ChunkProximityComparator());
@@ -446,7 +446,7 @@ public final class WorldRenderer implements IGameObject {
      * Renders the world.
      */
     @Override
-    public void render() {
+    public void render(boolean reflected) {
         _renderQueueTransparent.add(_bulletRenderer);
         resetStats();
 
@@ -455,9 +455,7 @@ public final class WorldRenderer implements IGameObject {
         if (Config.getInstance().isComplexWater()) {
             PostProcessingRenderer.getInstance().beginRenderReflectedScene();
             glCullFace(GL11.GL_FRONT);
-            getActiveCamera().setReflected(true);
             renderWorldReflection(getActiveCamera());
-            getActiveCamera().setReflected(false);
             glCullFace(GL11.GL_BACK);
             PostProcessingRenderer.getInstance().endRenderReflectedScene();
         }
@@ -473,7 +471,7 @@ public final class WorldRenderer implements IGameObject {
 
         if (_cameraMode == CAMERA_MODE.PLAYER) {
             glClear(GL_DEPTH_BUFFER_BIT);
-            _activeCamera.loadProjectionMatrix(80f);
+            //_activeCamera.updateProjectionMatrix(80f);
 
             PerformanceMonitor.startActivity("Render First Person");
             for (RenderSystem renderer : _systemManager.iterateRenderSubscribers()) {
@@ -484,14 +482,14 @@ public final class WorldRenderer implements IGameObject {
     }
 
     @Override
-    public void render(Matrix4f m, Matrix4f vm) {
+    public void render(Matrix4f m, Matrix4f vm, boolean reflected) {
     }
 
     public void renderWorld(Camera camera) {
         /* SKYSPHERE */
         PerformanceMonitor.startActivity("Render Sky");
         camera.lookThroughNormalized();
-        _skysphere.render();
+        _skysphere.render(false);
         PerformanceMonitor.endActivity();
 
         /* WORLD RENDERING */
@@ -525,7 +523,7 @@ public final class WorldRenderer implements IGameObject {
          * FIRST RENDER PASS: OPAQUE ELEMENTS
          */
         while (_renderQueueChunksOpaque.size() > 0)
-            renderChunk(_renderQueueChunksOpaque.poll(), ChunkMesh.RENDER_PHASE.OPAQUE, camera);
+            renderChunk(_renderQueueChunksOpaque.poll(), ChunkMesh.RENDER_PHASE.OPAQUE, camera, false);
 
         PerformanceMonitor.endActivity();
 
@@ -538,7 +536,7 @@ public final class WorldRenderer implements IGameObject {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         while (_renderQueueChunksSortedBillboards.size() > 0)
-            renderChunk(_renderQueueChunksSortedBillboards.poll(), ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, camera);
+            renderChunk(_renderQueueChunksSortedBillboards.poll(), ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, camera, false);
 
         PerformanceMonitor.endActivity();
 
@@ -559,10 +557,10 @@ public final class WorldRenderer implements IGameObject {
 
                 if (j == 0) {
                     glColorMask(false, false, false, false);
-                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, camera);
+                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, camera, false);
                 } else {
                     glColorMask(true, true, true, true);
-                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, camera);
+                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, camera, false);
                 }
             }
         }
@@ -570,7 +568,7 @@ public final class WorldRenderer implements IGameObject {
         PerformanceMonitor.startActivity("Render Transparent");
 
         while (_renderQueueTransparent.size() > 0)
-            _renderQueueTransparent.poll().render();
+            _renderQueueTransparent.poll().render(false);
         for (RenderSystem renderer : _systemManager.iterateRenderSubscribers()) {
             renderer.renderTransparent();
         }
@@ -596,35 +594,40 @@ public final class WorldRenderer implements IGameObject {
 
     public void renderWorldReflection(Camera camera) {
         PerformanceMonitor.startActivity("Render Sky");
-        camera.lookThroughNormalized();
-        _skysphere.render();
+        camera.lookThroughNormalizedReflected();
+        _skysphere.render(true);
 
-        camera.lookThrough();
+        camera.lookThroughReflected();
 
         glEnable(GL_LIGHT0);
 
         for (Chunk c : _renderQueueChunksOpaque)
-            renderChunk(c, ChunkMesh.RENDER_PHASE.OPAQUE, camera);
+            renderChunk(c, ChunkMesh.RENDER_PHASE.OPAQUE, camera, true);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         for (Chunk c : _renderQueueChunksSortedBillboards)
-            renderChunk(c, ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, camera);
+            renderChunk(c, ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, camera, true);
 
-        for (IGameObject g : _renderQueueTransparent)
-            g.render();
+        for (Renderable g : _renderQueueTransparent)
+            g.render(true);
 
         glDisable(GL_BLEND);
         glDisable(GL_LIGHT0);
     }
 
-    private void renderChunk(Chunk chunk, ChunkMesh.RENDER_PHASE phase, Camera camera) {
+    private void renderChunk(Chunk chunk, ChunkMesh.RENDER_PHASE phase, Camera camera, boolean reflected) {
         if (chunk.getChunkState() == Chunk.State.COMPLETE && chunk.getMesh() != null) {
             ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("chunk");
             // Transfer the world offset of the chunk to the shader for various effects
             shader.setFloat3("chunkOffset", (float) (chunk.getPos().x * Chunk.SIZE_X), (float) (chunk.getPos().y * Chunk.SIZE_Y), (float) (chunk.getPos().z * Chunk.SIZE_Z));
             shader.setFloat("animated", chunk.getAnimated() ? 1.0f: 0.0f);
+
+            if (reflected)
+                shader.setFloat("clipHeight", 31.5f);
+            else
+                shader.setFloat("clipHeight", 0.0f);
 
             GL11.glPushMatrix();
 

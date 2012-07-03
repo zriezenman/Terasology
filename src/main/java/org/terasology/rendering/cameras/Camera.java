@@ -15,14 +15,17 @@
  */
 package org.terasology.rendering.cameras;
 
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.logic.manager.Config;
 import org.terasology.model.structures.ViewFrustum;
 
 import javax.vecmath.Vector3d;
 
-import static org.lwjgl.opengl.GL11.glScalef;
-import static org.lwjgl.opengl.GL11.glTranslatef;
+import java.nio.FloatBuffer;
+
+import static org.lwjgl.opengl.GL11.*;
 
 /**
  * Provides global access to fonts.
@@ -39,10 +42,14 @@ public abstract class Camera {
     protected float _targetFov = Config.getInstance().getFov();
     protected float _activeFov = Config.getInstance().getFov() / 4f;
 
+    protected Matrix4f _viewMatrix = new Matrix4f();
+    protected Matrix4f _reflectedViewMatrix = new Matrix4f();
+    protected Matrix4f _reflectedNormalizedViewMatrix = new Matrix4f();
+    protected Matrix4f _normalizedViewMatrix = new Matrix4f();
+    protected Matrix4f _projectionMatrix = new Matrix4f();
+
     /* VIEW FRUSTUM */
     protected final ViewFrustum _viewFrustum = new ViewFrustum();
-
-    protected boolean _reflected = false;
 
     /**
      * Applies the projection and modelview matrix.
@@ -52,6 +59,15 @@ public abstract class Camera {
         loadViewMatrix();
     }
 
+    public void lookThroughReflected() {
+        loadProjectionMatrix();
+        loadReflectedViewMatrix();
+    }
+
+    public void lookThroughNormalizedReflected() {
+        loadProjectionMatrix();
+        loadReflectedNormalizedViewMatrix();
+    }
 
     /**
      * Applies the projection and the normalized modelview matrix (positioned at the origin without any offset like bobbing) .
@@ -61,21 +77,71 @@ public abstract class Camera {
         loadNormalizedViewMatrix();
     }
 
-    public abstract void loadProjectionMatrix(float fov);
-
     public void loadProjectionMatrix() {
-        loadProjectionMatrix(_activeFov);
+        loadProjectionMatrix(_projectionMatrix);
     }
 
-    public abstract void loadViewMatrix();
+    public void loadViewMatrix() {
+        loadModelViewMatrix(_viewMatrix);
+    }
 
-    public abstract void loadNormalizedViewMatrix();
+    public void loadNormalizedViewMatrix() {
+        loadModelViewMatrix(_normalizedViewMatrix);
+    }
 
-    public abstract Matrix4f calcViewMatrix();
+    public void loadReflectedNormalizedViewMatrix() {
+        loadModelViewMatrix(_reflectedNormalizedViewMatrix);
+    }
 
-    public abstract Matrix4f calcNormalizedViewMatrix();
+    public void loadReflectedViewMatrix() {
+        loadModelViewMatrix(_reflectedViewMatrix);
+    }
 
-    public abstract void loadMatrix(Matrix4f m);
+    public Matrix4f getViewMatrix() {
+        return _viewMatrix;
+    }
+
+    public Matrix4f getNormalizedViewMatrix() {
+        return _normalizedViewMatrix;
+    }
+
+    public Matrix4f getProjectionMatrix() {
+        return _projectionMatrix;
+    }
+
+    public Matrix4f getReflectedViewMatrix() {
+        return _reflectedViewMatrix;
+    }
+
+    protected abstract Matrix4f calcViewMatrix(boolean reflected);
+
+    protected abstract Matrix4f calcProjectionMatrix(float fov);
+
+    protected abstract Matrix4f calcNormalizedViewMatrix(boolean reflected);
+
+    public void updateProjectionMatrix(float fov) {
+        _projectionMatrix = calcProjectionMatrix(fov);
+    }
+
+    public void loadModelViewMatrix(Matrix4f m) {
+        FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
+        m.store(buffer);
+        buffer.flip();
+
+        glLoadMatrix(buffer);
+        _viewFrustum.updateFrustum();
+    }
+
+    public void loadProjectionMatrix(Matrix4f m) {
+        glMatrixMode(GL11.GL_PROJECTION);
+
+        FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
+        m.store(buffer);
+        buffer.flip();
+
+        glLoadMatrix(buffer);
+        glMatrixMode(GL11.GL_MODELVIEW);
+    }
 
     public Vector3d getPosition() {
         return _position;
@@ -97,9 +163,7 @@ public abstract class Camera {
         double diff = Math.abs(_activeFov - _targetFov);
         if (diff < 1.0) {
             _activeFov = _targetFov;
-            return;
-        }
-        if (_activeFov < _targetFov) {
+        } else if (_activeFov < _targetFov) {
             _activeFov += 50.0 * delta;
             if (_activeFov >= _targetFov) {
                 _activeFov = _targetFov;
@@ -110,6 +174,13 @@ public abstract class Camera {
                 _activeFov = _targetFov;
             }
         }
+
+        // TODO: Check if something has changed beforehand
+        _viewMatrix = calcViewMatrix(false);
+        updateProjectionMatrix(_activeFov);
+        _normalizedViewMatrix = calcNormalizedViewMatrix(false);
+        _reflectedViewMatrix = calcViewMatrix(true);
+        _reflectedNormalizedViewMatrix = calcNormalizedViewMatrix(true);
     }
 
     public void extendFov(float fov) {
@@ -118,15 +189,5 @@ public abstract class Camera {
 
     public void resetFov() {
         _targetFov = Config.getInstance().getFov();
-    }
-
-    public void setReflected(boolean reflected) {
-        _reflected = reflected;
-    }
-
-    public float getClipHeight() {
-        if (_reflected)
-            return 31.5f;
-        return 0;
     }
 }

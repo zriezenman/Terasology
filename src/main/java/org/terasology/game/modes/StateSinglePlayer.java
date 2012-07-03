@@ -388,7 +388,7 @@ public class StateSinglePlayer implements GameState {
         glLoadIdentity();
 
         if (worldRenderer != null) {
-            worldRenderer.render();
+            worldRenderer.render(false);
         }
 
         /* UI */

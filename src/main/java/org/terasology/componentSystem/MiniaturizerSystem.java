@@ -68,7 +68,7 @@ public class MiniaturizerSystem implements UpdateSubscriberSystem, RenderSystem 
         for (EntityRef entity : entityManager.iteratorEntities(MiniaturizerComponent.class)) {
             MiniaturizerComponent min = entity.getComponent(MiniaturizerComponent.class);
 
-            min.blockGrid.render();
+            min.blockGrid.render(false);
 
             if (min.chunkMesh == null || min.renderPosition == null)
                 continue;

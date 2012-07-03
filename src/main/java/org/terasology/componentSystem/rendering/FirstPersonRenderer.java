@@ -1,6 +1,7 @@
 package org.terasology.componentSystem.rendering;
 
 import com.google.common.collect.Maps;
+import org.lwjgl.BufferChecks;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.componentSystem.RenderSystem;
@@ -104,26 +105,30 @@ public class FirstPersonRenderer implements RenderSystem {
 
     }
 
-    // TODO: Needs to use local matrices
     private void renderHand(float bobOffset, float handMovementAnimationOffset) {
         ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("block");
         shader.enable();
         shader.setFloat("light", worldRenderer.getRenderingLightValue());
         glBindTexture(GL11.GL_TEXTURE_2D, handTex.getId());
 
-        glPushMatrix();
-        glTranslatef(0.8f, -0.8f + bobOffset - handMovementAnimationOffset * 0.5f, -1.0f - handMovementAnimationOffset * 0.5f);
-        glRotatef(-45f - handMovementAnimationOffset * 64.0f, 1.0f, 0.0f, 0.0f);
-        glRotatef(35f, 0.0f, 1.0f, 0.0f);
-        glTranslatef(0f, 0.25f, 0f);
-        glScalef(0.3f, 0.6f, 0.3f);
+        Matrix4f viewMatrix = new Matrix4f();
+        viewMatrix.setIdentity();
+
+        Matrix4f modelMatrix = new Matrix4f();
+        modelMatrix.setIdentity();
+
+        modelMatrix.translate(new org.lwjgl.util.vector.Vector3f(0.8f, -0.8f + bobOffset - handMovementAnimationOffset * 0.5f, -1.0f - handMovementAnimationOffset * 0.5f));
+        modelMatrix.rotate(TeraMath.DEG_TO_RAD * (-45f - handMovementAnimationOffset * 64.0f), new org.lwjgl.util.vector.Vector3f(1.0f, 0.0f, 0.0f));
+        modelMatrix.rotate(TeraMath.DEG_TO_RAD * -35f, new org.lwjgl.util.vector.Vector3f(0.0f, 1.0f, 0.0f));
+        modelMatrix.translate(new org.lwjgl.util.vector.Vector3f(0f, 0.25f, 0f));
+        modelMatrix.scale(new org.lwjgl.util.vector.Vector3f(0.4f, 0.6f, 0.3f));
+
+        shader.setMatrix4("modelMatrix", modelMatrix);
+        shader.setMatrix4("viewMatrix", viewMatrix);
 
         handMesh.render();
-
-        glPopMatrix();
     }
 
-    // TODO: Needs to use local matrices
     private void renderIcon(String iconName, float bobOffset, float handMovementAnimationOffset) {
         ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("block");
         shader.enable();
@@ -131,13 +136,20 @@ public class FirstPersonRenderer implements RenderSystem {
         shader.setInt("textured", 0);
         shader.setFloat("light", worldRenderer.getRenderingLightValue());
 
-        glPushMatrix();
+        Matrix4f viewMatrix = new Matrix4f();
+        viewMatrix.setIdentity();
 
-        glTranslatef(1.0f, -0.7f + bobOffset - handMovementAnimationOffset * 0.5f, -1.5f - handMovementAnimationOffset * 0.5f);
-        glRotatef(-handMovementAnimationOffset * 64.0f, 1.0f, 0.0f, 0.0f);
-        glRotatef(-20f, 1.0f, 0.0f, 0.0f);
-        glRotatef(-80f, 0.0f, 1.0f, 0.0f);
-        glRotatef(45f, 0.0f, 0.0f, 1.0f);
+        Matrix4f modelMatrix = new Matrix4f();
+        modelMatrix.setIdentity();
+
+        modelMatrix.translate(new org.lwjgl.util.vector.Vector3f(1.0f, -0.7f + bobOffset - handMovementAnimationOffset * 0.5f, -1.5f - handMovementAnimationOffset * 0.5f));
+        modelMatrix.rotate(TeraMath.DEG_TO_RAD * (-handMovementAnimationOffset * 64.0f), new org.lwjgl.util.vector.Vector3f(1.0f, 0.0f, 0.0f));
+        modelMatrix.rotate(TeraMath.DEG_TO_RAD * -20f, new org.lwjgl.util.vector.Vector3f(1.0f, 0.0f, 0.0f));
+        modelMatrix.rotate(TeraMath.DEG_TO_RAD * -80f, new org.lwjgl.util.vector.Vector3f(0.0f, 1.0f, 0.0f));
+        modelMatrix.rotate(TeraMath.DEG_TO_RAD * 45f, new org.lwjgl.util.vector.Vector3f(0.0f, 0.0f, 1.0f));
+
+        shader.setMatrix4("modelMatrix", modelMatrix);
+        shader.setMatrix4("viewMatrix", viewMatrix);
 
         Mesh itemMesh = iconMeshes.get(iconName);
         if (itemMesh == null) {
@@ -147,8 +159,6 @@ public class FirstPersonRenderer implements RenderSystem {
         }
 
         itemMesh.render();
-
-        glPopMatrix();
     }
 
     private void renderBlock(BlockFamily blockFamily, float bobOffset, float handMovementAnimationOffset) {
@@ -183,7 +193,7 @@ public class FirstPersonRenderer implements RenderSystem {
         modelMatrix.rotate(TeraMath.DEG_TO_RAD * 35f, new org.lwjgl.util.vector.Vector3f(0.0f, 1.0f, 0.0f));
         modelMatrix.translate(new org.lwjgl.util.vector.Vector3f(0f, 0.25f, 0f));
 
-        activeBlock.renderWithLightValue(worldRenderer.getRenderingLightValue(), modelMatrix, viewMatrix);
+        activeBlock.renderWithLightValue(worldRenderer.getRenderingLightValue(), modelMatrix, viewMatrix, false);
 
         if (activeBlock.isTranslucent()) {
             glDisable(GL11.GL_ALPHA_TEST);

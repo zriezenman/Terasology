@@ -39,43 +39,19 @@ public class DefaultCamera extends Camera {
 
     private double _bobbingRotationOffsetFactor, _bobbingVerticalOffsetFactor = 0.0;
 
-    public void loadProjectionMatrix(float fov) {
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        float aspectRatio = (float) Display.getWidth() / Display.getHeight();
-        float fovy = (float) (2 * Math.atan2(Math.tan(0.5 * fov * TeraMath.DEG_TO_RAD), aspectRatio)) * TeraMath.RAD_TO_DEG;
-        gluPerspective(fovy, aspectRatio, 0.1f, 512f);
-        glMatrixMode(GL11.GL_MODELVIEW);
+    @Override
+    protected Matrix4f calcProjectionMatrix(float fov) {
+        return TeraMath.createProjectionMatrix(fov, 0.1f, 512f);
     }
 
-    public void loadViewMatrix() {
-        loadMatrix(calcViewMatrix());
-    }
-
-    public void loadNormalizedViewMatrix() {
-        loadMatrix(calcNormalizedViewMatrix());
-    }
-
-    public void loadMatrix(Matrix4f m) {
-        glMatrixMode(GL11.GL_MODELVIEW);
-        glLoadIdentity();
-
-        FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
-        m.store(buffer);
-        buffer.flip();
-
-        glLoadMatrix(buffer);
-        _viewFrustum.updateFrustum();
-    }
-
-    public Matrix4f calcViewMatrix() {
+    protected Matrix4f calcViewMatrix(boolean reflected) {
         Vector3d right = new Vector3d();
         right.cross(_viewingDirection, _up);
         right.scale(_bobbingRotationOffsetFactor);
 
         Matrix4f vm = TeraMath.createViewMatrix(0f, (float) _bobbingVerticalOffsetFactor * 2.0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y + (float) _bobbingVerticalOffsetFactor * 2.0f, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
 
-        if (_reflected) {
+        if (reflected) {
             vm.translate(new Vector3f(0.0f, 2f * ((float) -_position.y + 32f), 0.0f));
             vm.scale(new Vector3f(1.0f, -1.0f, 1.0f));
         }
@@ -83,14 +59,14 @@ public class DefaultCamera extends Camera {
         return vm;
     }
 
-    public Matrix4f calcNormalizedViewMatrix() {
+    protected Matrix4f calcNormalizedViewMatrix(boolean reflected) {
         Vector3d right = new Vector3d();
         right.cross(_viewingDirection, _up);
         right.scale(_bobbingRotationOffsetFactor);
 
         Matrix4f vm = TeraMath.createViewMatrix(0f, 0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
 
-        if (_reflected) {
+        if (reflected) {
             vm.scale(new Vector3f(1.0f, -1.0f, 1.0f));
         }
 

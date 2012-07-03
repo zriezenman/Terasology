@@ -50,8 +50,6 @@ public class ShaderParametersBlock implements IShaderParameters {
         LocalPlayer localPlayer = CoreRegistry.get(LocalPlayer.class);
         program.setInt("carryingTorch", localPlayer.isCarryingTorch() ? 1 : 0);
 
-        program.setFloat("clipHeight", worldRenderer.getActiveCamera().getClipHeight());
-
         program.setFloat3("colorOffset", 1.0f, 1.0f, 1.0f);
         program.setInt("textured", 1);
     }

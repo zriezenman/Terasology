@@ -31,7 +31,6 @@ import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSo
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
 import org.terasology.asset.AssetType;
 import org.terasology.asset.AssetUri;
 import org.terasology.components.CharacterMovementComponent;
@@ -45,13 +44,12 @@ import org.terasology.entitySystem.PrefabManager;
 import org.terasology.events.inventory.ReceiveItemEvent;
 import org.terasology.game.CoreRegistry;
 import org.terasology.game.Timer;
-import org.terasology.logic.LocalPlayer;
 import org.terasology.logic.manager.AudioManager;
 import org.terasology.logic.world.Chunk;
 import org.terasology.model.blocks.Block;
 import org.terasology.model.blocks.management.BlockManager;
-import org.terasology.rendering.cameras.Camera;
-import org.terasology.rendering.interfaces.IGameObject;
+import org.terasology.rendering.interfaces.Renderable;
+import org.terasology.rendering.interfaces.Updatable;
 import org.terasology.rendering.primitives.ChunkMesh;
 import org.terasology.rendering.world.WorldRenderer;
 import org.terasology.utilities.FastRandom;
@@ -61,7 +59,6 @@ import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -73,7 +70,7 @@ import java.util.logging.Logger;
  *
  * @author Benjamin Glatzel <benjamin.glatzel@me.com>
  */
-public class BulletPhysicsRenderer implements IGameObject {
+public class BulletPhysicsRenderer implements Renderable, Updatable {
 
     private class BlockRigidBody extends RigidBody implements Comparable<BlockRigidBody> {
         private final byte _type;
@@ -301,7 +298,7 @@ public class BulletPhysicsRenderer implements IGameObject {
     }
 
     @Override
-    public void render() {
+    public void render(org.lwjgl.util.vector.Matrix4f m, org.lwjgl.util.vector.Matrix4f vm, boolean reflected) {
         Vector3d cameraPosition = _parent.getActiveCamera().getPosition();
 
         float[] mFloat = new float[16];
@@ -322,7 +319,14 @@ public class BulletPhysicsRenderer implements IGameObject {
                 org.lwjgl.util.vector.Matrix4f modelMatrix = new org.lwjgl.util.vector.Matrix4f();
                 modelMatrix.load(mBuffer);
 
-                org.lwjgl.util.vector.Matrix4f vm = CoreRegistry.get(WorldRenderer.class).getActiveCamera().calcViewMatrix();
+                if (reflected) {
+                    vm = new org.lwjgl.util.vector.Matrix4f(CoreRegistry.get(WorldRenderer.class).getActiveCamera().getReflectedViewMatrix());
+                }
+                else {
+                    vm = new org.lwjgl.util.vector.Matrix4f(CoreRegistry.get(WorldRenderer.class).getActiveCamera().getViewMatrix());
+                }
+
+
                 vm.translate(new org.lwjgl.util.vector.Vector3f((float) -cameraPosition.x, (float)  -cameraPosition.y, (float)  -cameraPosition.z));
 
                 if (br.getCollisionShape() == _blockShapeHalf)
@@ -330,14 +334,9 @@ public class BulletPhysicsRenderer implements IGameObject {
                 else if (br.getCollisionShape() == _blockShapeQuarter)
                     modelMatrix.scale(new org.lwjgl.util.vector.Vector3f(0.25f, 0.25f, 0.25f));
 
-                block.renderWithLightValue(_parent.getRenderingLightValueAt(t.origin), modelMatrix, vm);
+                block.renderWithLightValue(_parent.getRenderingLightValueAt(t.origin), modelMatrix, vm, reflected);
             }
         }
-    }
-
-    @Override
-    public void render(org.lwjgl.util.vector.Matrix4f m, org.lwjgl.util.vector.Matrix4f vm) {
-
     }
 
     @Override

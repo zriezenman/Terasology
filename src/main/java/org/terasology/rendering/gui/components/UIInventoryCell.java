@@ -204,7 +204,7 @@ public class UIInventoryCell extends UIDisplayElement {
         ;
 
         Block block = blockFamily.getArchetypeBlock();
-        block.render();
+        block.render(false);
 
         GL11.glPopMatrix();
 

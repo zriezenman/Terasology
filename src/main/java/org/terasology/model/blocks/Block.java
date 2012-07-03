@@ -17,7 +17,6 @@ package org.terasology.model.blocks;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
 import org.newdawn.slick.util.ResourceLoader;
 import org.terasology.collection.EnumBooleanMap;
 import org.terasology.logic.manager.ShaderManager;
@@ -25,8 +24,7 @@ import org.terasology.math.Side;
 import org.terasology.model.shapes.BlockMeshPart;
 import org.terasology.model.structures.AABB;
 import org.terasology.model.structures.BlockPosition;
-import org.terasology.rendering.cameras.Camera;
-import org.terasology.rendering.interfaces.IGameObject;
+import org.terasology.rendering.interfaces.Renderable;
 import org.terasology.rendering.primitives.Mesh;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.shader.ShaderProgram;
@@ -53,7 +51,7 @@ import static org.lwjgl.opengl.GL11.*;
  * @author Benjamin Glatzel <benjamin.glatzel@me.com>
  * @author Rasmus 'Cervator' Praestholm <cervator@gmail.com>
  */
-public class Block implements IGameObject {
+public class Block implements Renderable {
 
     private static final Logger logger = Logger.getLogger(Block.class.getName());
     public static final int ATLAS_SIZE_IN_PX = 256;
@@ -253,7 +251,7 @@ public class Block implements IGameObject {
         return new Vector2f(pos.x * TEXTURE_OFFSET, pos.y * TEXTURE_OFFSET);
     }
 
-    public void renderWithLightValue(float light, Matrix4f m, Matrix4f vm) {
+    public void renderWithLightValue(float light, Matrix4f m, Matrix4f vm, boolean reflected) {
         if (isInvisible())
             return;
 
@@ -263,6 +261,11 @@ public class Block implements IGameObject {
 
         shader.setMatrix4("modelMatrix", m);
         shader.setMatrix4("viewMatrix", vm);
+
+        if (reflected)
+            shader.setFloat("clipHeight", 31.5f);
+        else
+            shader.setFloat("clipHeight", 0.0f);
 
         if (_mesh == null) {
             Tessellator tessellator = new Tessellator();
@@ -291,19 +294,9 @@ public class Block implements IGameObject {
     }
 
     @Override
-    public void render() {
+    public void render(Matrix4f m, Matrix4f vm, boolean reflected) {
+        renderWithLightValue(1.0f, m, vm, reflected);
     }
-
-    @Override
-    public void render(Matrix4f m, Matrix4f vm) {
-        renderWithLightValue(1.0f, m, vm);
-    }
-
-    @Override
-    public void update(float delta) {
-        // Do nothing
-    }
-
 
     // TODO: Change all of these to setters
     public Block withId(byte id) {

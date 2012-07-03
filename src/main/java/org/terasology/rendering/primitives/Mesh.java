@@ -26,6 +26,7 @@ import org.lwjgl.opengl.GL15;
 import org.terasology.asset.Asset;
 import org.terasology.asset.AssetUri;
 import org.terasology.logic.manager.VertexBufferObjectManager;
+import org.terasology.rendering.interfaces.Renderable;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -33,7 +34,7 @@ import java.nio.IntBuffer;
 import static org.lwjgl.opengl.GL11.*;
 
 // TODO: Store mesh information in Mesh class in a usable format, for
-public class Mesh implements Asset {
+public class Mesh implements Asset, Renderable {
 
     private static final int VERTEX_SIZE = 3;
     private static final int TEX_COORD_0_SIZE = 2;
