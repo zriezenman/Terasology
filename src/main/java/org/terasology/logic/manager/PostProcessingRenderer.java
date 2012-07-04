@@ -20,9 +20,11 @@ import org.lwjgl.opengl.*;
 import org.terasology.game.CoreRegistry;
 import org.terasology.game.Timer;
 import org.terasology.math.TeraMath;
+import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.shader.ShaderProgram;
 import org.terasology.rendering.world.WorldRenderer;
 
+import javax.vecmath.Matrix4f;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 
@@ -297,6 +299,15 @@ public class PostProcessingRenderer {
     private void renderFinalScene() {
         ShaderProgram shaderPost = ShaderManager.getInstance().getShaderProgram("post");
         shaderPost.enable();
+
+        Camera c = CoreRegistry.get(WorldRenderer.class).getActiveCamera();
+        Matrix4f vm = new Matrix4f(c.getViewMatrix());
+        vm.invert();
+        Matrix4f pm = new Matrix4f(c.getProjectionMatrix());
+        pm.invert();
+
+        shaderPost.setMatrix4("invViewMatrix", vm);
+        shaderPost.setMatrix4("invProjMatrix", pm);
 
         renderFullQuad();
     }

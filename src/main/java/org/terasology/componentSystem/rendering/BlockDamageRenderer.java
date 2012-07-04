@@ -78,7 +78,7 @@ public class BlockDamageRenderer implements RenderSystem {
             glTranslatef(offset, 0f, 0f);
             glMatrixMode(GL_MODELVIEW);
 
-            overlayMesh.render();
+            //overlayMesh.render();
 
             glPopMatrix();
 

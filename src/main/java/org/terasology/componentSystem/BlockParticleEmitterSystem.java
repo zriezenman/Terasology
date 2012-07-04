@@ -20,6 +20,7 @@ import org.terasology.rendering.shader.ShaderProgram;
 import org.terasology.rendering.world.WorldRenderer;
 import org.terasology.utilities.FastRandom;
 
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 import javax.vecmath.Vector4f;
@@ -118,7 +119,8 @@ public class BlockParticleEmitterSystem implements UpdateSubscriberSystem, Rende
     }
 
     public void renderTransparent() {
-        ShaderManager.getInstance().enableShader("particle");
+        ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("particle");
+        shader.enable();
         glDisable(GL11.GL_CULL_FACE);
 
         Vector3d cameraPosition = worldRenderer.getActiveCamera().getPosition();
@@ -133,24 +135,27 @@ public class BlockParticleEmitterSystem implements UpdateSubscriberSystem, Rende
             double temperature = worldProvider.getBiomeProvider().getTemperatureAt((int) worldPos.x, (int) worldPos.z);
             double humidity = worldProvider.getBiomeProvider().getHumidityAt((int) worldPos.x, (int) worldPos.z);
 
-            glPushMatrix();
-            glTranslated(worldPos.x - cameraPosition.x, worldPos.y - cameraPosition.y, worldPos.z - cameraPosition.z);
+            Matrix4f modelMatrix = new Matrix4f();
+            modelMatrix.setIdentity();
+            modelMatrix.setTranslation(new Vector3f((float) (worldPos.x - cameraPosition.x), (float) (worldPos.y - cameraPosition.y), (float) (worldPos.z - cameraPosition.z)));
 
             BlockParticleEffectComponent particleEffect = entity.getComponent(BlockParticleEffectComponent.class);
             if (particleEffect.blockType == null) {
                 return;
             }
             for (Particle particle : particleEffect.particles) {
-                glPushMatrix();
-                glTranslatef(particle.position.x, particle.position.y, particle.position.z);
-                applyOrientation();
-                glScalef(particle.size, particle.size, particle.size);
+                Matrix4f particleModelMatrix = new Matrix4f();
+                particleModelMatrix.setIdentity();
+                particleModelMatrix.setTranslation(new Vector3f(particle.position.x, particle.position.y, particle.position.z));
+                particleModelMatrix.setScale(particle.size);
+
+                particleModelMatrix.mul(modelMatrix, particleModelMatrix);
+                shader.setAndCalcRenderingMatrices(particleModelMatrix, worldRenderer.getActiveCamera().getViewMatrix(), worldRenderer.getActiveCamera().getProjectionMatrix());
+                //applyOrientation();
 
                 float light = worldRenderer.getRenderingLightValueAt(new Vector3f(worldPos.x + particle.position.x, worldPos.y + particle.position.y, worldPos.z + particle.position.z));
                 renderParticle(particle, particleEffect.blockType.getArchetypeBlock().getId(), temperature, humidity, light);
-                glPopMatrix();
             }
-            glPopMatrix();
         }
 
         glEnable(GL11.GL_CULL_FACE);

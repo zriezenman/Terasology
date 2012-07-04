@@ -20,13 +20,14 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.glu.Sphere;
-import org.lwjgl.util.vector.Matrix4f;
+import org.terasology.game.CoreRegistry;
 import org.terasology.logic.manager.AssetManager;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.TeraMath;
 import org.terasology.rendering.interfaces.Renderable;
 import org.terasology.rendering.shader.ShaderProgram;
 
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector4d;
 import javax.vecmath.Vector4f;
@@ -86,49 +87,6 @@ public class Skysphere implements Renderable {
             GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, size, size,
                     0, format, GL11.GL_UNSIGNED_BYTE, data);
         }
-    }
-
-    public void render(boolean reflected) {
-        glDisable(GL_CULL_FACE);
-        glDisable(GL_DEPTH_TEST);
-
-        glEnable(GL13.GL_TEXTURE_CUBE_MAP);
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, _textureIds.get(0));
-        GL13.glActiveTexture(GL13.GL_TEXTURE1);
-        GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, _textureIds.get(1));
-
-        _sunPosAngle = (float) java.lang.Math.toRadians(360.0 * _parent.getWorldProvider().getTimeInDays() - 90.0);
-        Vector4d sunNormalise = new Vector4d(0.0f, java.lang.Math.cos(_sunPosAngle), java.lang.Math.sin(_sunPosAngle), 1.0);
-        sunNormalise.normalize();
-
-        Vector3d zenithColor = new Vector3d();
-
-        if (sunNormalise.y >= -0.35)
-            zenithColor = getAllWeatherZenith((float) sunNormalise.y);
-
-        ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("sky");
-        shader.enable();
-
-        shader.setInt("texCubeStars", 0);
-        shader.setInt("texCubeSky", 1);
-        shader.setFloat4("sunPos", 0.0f, (float) java.lang.Math.cos(_sunPosAngle), (float) java.lang.Math.sin(_sunPosAngle), 1.0f);
-        shader.setFloat("time", _parent.getWorldProvider().getTimeInDays());
-        shader.setFloat("sunAngle", (float) _sunPosAngle);
-        shader.setFloat("turbidity", (float) _turbidity);
-        shader.setFloat3("zenith", (float) zenithColor.x, (float) zenithColor.y, (float) zenithColor.z);
-        shader.setFloat("daylight", (float) getDaylight());
-
-        // Draw the skysphere
-        drawSphere();
-
-        glDisable(GL13.GL_TEXTURE_CUBE_MAP);
-        glEnable(GL_CULL_FACE);
-        glEnable(GL_DEPTH_TEST);
-    }
-
-    @Override
-    public void render(Matrix4f m, Matrix4f vm, boolean reflected) {
     }
 
     private Vector3d getAllWeatherZenith(float thetaSun) {
@@ -193,5 +151,49 @@ public class Skysphere implements Renderable {
         }
 
         return daylight;
+    }
+
+    @Override
+    public void render(Matrix4f m, Matrix4f vm) {
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+
+        glEnable(GL13.GL_TEXTURE_CUBE_MAP);
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, _textureIds.get(0));
+        GL13.glActiveTexture(GL13.GL_TEXTURE1);
+        GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, _textureIds.get(1));
+
+        _sunPosAngle = (float) java.lang.Math.toRadians(360.0 * _parent.getWorldProvider().getTimeInDays() - 90.0);
+        Vector4d sunNormalise = new Vector4d(0.0f, java.lang.Math.cos(_sunPosAngle), java.lang.Math.sin(_sunPosAngle), 1.0);
+        sunNormalise.normalize();
+
+        Vector3d zenithColor = new Vector3d();
+
+        if (sunNormalise.y >= -0.35)
+            zenithColor = getAllWeatherZenith((float) sunNormalise.y);
+
+        ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("sky");
+        shader.enable();
+
+        shader.setInt("texCubeStars", 0);
+        shader.setInt("texCubeSky", 1);
+        shader.setFloat4("sunPos", 0.0f, (float) java.lang.Math.cos(_sunPosAngle), (float) java.lang.Math.sin(_sunPosAngle), 1.0f);
+        shader.setFloat("time", _parent.getWorldProvider().getTimeInDays());
+        shader.setFloat("sunAngle", (float) _sunPosAngle);
+        shader.setFloat("turbidity", (float) _turbidity);
+        shader.setFloat3("zenith", (float) zenithColor.x, (float) zenithColor.y, (float) zenithColor.z);
+        shader.setFloat("daylight", (float) getDaylight());
+
+        shader.setMatrix4("projectionMatrix", CoreRegistry.get(WorldRenderer.class).getActiveCamera().getProjectionMatrix());
+        shader.setMatrix4("modelMatrix", m);
+        shader.setMatrix4("viewMatrix", vm);
+
+        // Draw the skysphere
+        drawSphere();
+
+        glDisable(GL13.GL_TEXTURE_CUBE_MAP);
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
     }
 }

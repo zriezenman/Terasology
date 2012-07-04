@@ -28,6 +28,7 @@ import org.terasology.asset.AssetUri;
 import org.terasology.logic.manager.VertexBufferObjectManager;
 import org.terasology.rendering.interfaces.Renderable;
 
+import javax.vecmath.Matrix4f;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
@@ -159,7 +160,9 @@ public class Mesh implements Asset, Renderable {
         return uri;
     }
 
-    public void render() {
+
+    @Override
+    public void render(Matrix4f m, Matrix4f vm) {
         glEnableClientState(GL_VERTEX_ARRAY);
         if (hasTexCoord0 || hasTexCoord1) glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         if (hasColor) glEnableClientState(GL_COLOR_ARRAY);
@@ -193,5 +196,4 @@ public class Mesh implements Asset, Renderable {
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
     }
-
 }

@@ -16,10 +16,11 @@
 package org.terasology.model.structures;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
 import org.terasology.game.CoreRegistry;
+import org.terasology.math.TeraMath;
 import org.terasology.rendering.world.WorldRenderer;
 
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3d;
 import java.nio.FloatBuffer;
 
@@ -32,8 +33,8 @@ public class ViewFrustum {
 
     private final FrustumPlane[] _planes = new FrustumPlane[6];
 
-    private final FloatBuffer _proj = BufferUtils.createFloatBuffer(16);
-    private final FloatBuffer _model = BufferUtils.createFloatBuffer(16);
+    private final FloatBuffer _projectionMatrix = BufferUtils.createFloatBuffer(16);
+    private final FloatBuffer _viewMatrix = BufferUtils.createFloatBuffer(16);
     private final FloatBuffer _clip = BufferUtils.createFloatBuffer(16);
 
     /**
@@ -47,29 +48,29 @@ public class ViewFrustum {
     /**
      * Updates the view frustum using the currently active modelview and projection matrices.
      */
-    public void updateFrustum() {
-        GL11.glGetFloat(GL11.GL_PROJECTION_MATRIX, _proj);
-        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, _model);
+    public void updateFrustum(Matrix4f vm, Matrix4f pm) {
+        TeraMath.matrixToFloatBuffer(vm, _viewMatrix);
+        TeraMath.matrixToFloatBuffer(pm, _projectionMatrix);
 
-        _clip.put(0, _model.get(0) * _proj.get(0) + _model.get(1) * _proj.get(4) + _model.get(2) * _proj.get(8) + _model.get(3) * _proj.get(12));
-        _clip.put(1, _model.get(0) * _proj.get(1) + _model.get(1) * _proj.get(5) + _model.get(2) * _proj.get(9) + _model.get(3) * _proj.get(13));
-        _clip.put(2, _model.get(0) * _proj.get(2) + _model.get(1) * _proj.get(6) + _model.get(2) * _proj.get(10) + _model.get(3) * _proj.get(14));
-        _clip.put(3, _model.get(0) * _proj.get(3) + _model.get(1) * _proj.get(7) + _model.get(2) * _proj.get(11) + _model.get(3) * _proj.get(15));
+        _clip.put(0, _viewMatrix.get(0) * _projectionMatrix.get(0) + _viewMatrix.get(1) * _projectionMatrix.get(4) + _viewMatrix.get(2) * _projectionMatrix.get(8) + _viewMatrix.get(3) * _projectionMatrix.get(12));
+        _clip.put(1, _viewMatrix.get(0) * _projectionMatrix.get(1) + _viewMatrix.get(1) * _projectionMatrix.get(5) + _viewMatrix.get(2) * _projectionMatrix.get(9) + _viewMatrix.get(3) * _projectionMatrix.get(13));
+        _clip.put(2, _viewMatrix.get(0) * _projectionMatrix.get(2) + _viewMatrix.get(1) * _projectionMatrix.get(6) + _viewMatrix.get(2) * _projectionMatrix.get(10) + _viewMatrix.get(3) * _projectionMatrix.get(14));
+        _clip.put(3, _viewMatrix.get(0) * _projectionMatrix.get(3) + _viewMatrix.get(1) * _projectionMatrix.get(7) + _viewMatrix.get(2) * _projectionMatrix.get(11) + _viewMatrix.get(3) * _projectionMatrix.get(15));
 
-        _clip.put(4, _model.get(4) * _proj.get(0) + _model.get(5) * _proj.get(4) + _model.get(6) * _proj.get(8) + _model.get(7) * _proj.get(12));
-        _clip.put(5, _model.get(4) * _proj.get(1) + _model.get(5) * _proj.get(5) + _model.get(6) * _proj.get(9) + _model.get(7) * _proj.get(13));
-        _clip.put(6, _model.get(4) * _proj.get(2) + _model.get(5) * _proj.get(6) + _model.get(6) * _proj.get(10) + _model.get(7) * _proj.get(14));
-        _clip.put(7, _model.get(4) * _proj.get(3) + _model.get(5) * _proj.get(7) + _model.get(6) * _proj.get(11) + _model.get(7) * _proj.get(15));
+        _clip.put(4, _viewMatrix.get(4) * _projectionMatrix.get(0) + _viewMatrix.get(5) * _projectionMatrix.get(4) + _viewMatrix.get(6) * _projectionMatrix.get(8) + _viewMatrix.get(7) * _projectionMatrix.get(12));
+        _clip.put(5, _viewMatrix.get(4) * _projectionMatrix.get(1) + _viewMatrix.get(5) * _projectionMatrix.get(5) + _viewMatrix.get(6) * _projectionMatrix.get(9) + _viewMatrix.get(7) * _projectionMatrix.get(13));
+        _clip.put(6, _viewMatrix.get(4) * _projectionMatrix.get(2) + _viewMatrix.get(5) * _projectionMatrix.get(6) + _viewMatrix.get(6) * _projectionMatrix.get(10) + _viewMatrix.get(7) * _projectionMatrix.get(14));
+        _clip.put(7, _viewMatrix.get(4) * _projectionMatrix.get(3) + _viewMatrix.get(5) * _projectionMatrix.get(7) + _viewMatrix.get(6) * _projectionMatrix.get(11) + _viewMatrix.get(7) * _projectionMatrix.get(15));
 
-        _clip.put(8, _model.get(8) * _proj.get(0) + _model.get(9) * _proj.get(4) + _model.get(10) * _proj.get(8) + _model.get(11) * _proj.get(12));
-        _clip.put(9, _model.get(8) * _proj.get(1) + _model.get(9) * _proj.get(5) + _model.get(10) * _proj.get(9) + _model.get(11) * _proj.get(13));
-        _clip.put(10, _model.get(8) * _proj.get(2) + _model.get(9) * _proj.get(6) + _model.get(10) * _proj.get(10) + _model.get(11) * _proj.get(14));
-        _clip.put(11, _model.get(8) * _proj.get(3) + _model.get(9) * _proj.get(7) + _model.get(10) * _proj.get(11) + _model.get(11) * _proj.get(15));
+        _clip.put(8, _viewMatrix.get(8) * _projectionMatrix.get(0) + _viewMatrix.get(9) * _projectionMatrix.get(4) + _viewMatrix.get(10) * _projectionMatrix.get(8) + _viewMatrix.get(11) * _projectionMatrix.get(12));
+        _clip.put(9, _viewMatrix.get(8) * _projectionMatrix.get(1) + _viewMatrix.get(9) * _projectionMatrix.get(5) + _viewMatrix.get(10) * _projectionMatrix.get(9) + _viewMatrix.get(11) * _projectionMatrix.get(13));
+        _clip.put(10, _viewMatrix.get(8) * _projectionMatrix.get(2) + _viewMatrix.get(9) * _projectionMatrix.get(6) + _viewMatrix.get(10) * _projectionMatrix.get(10) + _viewMatrix.get(11) * _projectionMatrix.get(14));
+        _clip.put(11, _viewMatrix.get(8) * _projectionMatrix.get(3) + _viewMatrix.get(9) * _projectionMatrix.get(7) + _viewMatrix.get(10) * _projectionMatrix.get(11) + _viewMatrix.get(11) * _projectionMatrix.get(15));
 
-        _clip.put(12, _model.get(12) * _proj.get(0) + _model.get(13) * _proj.get(4) + _model.get(14) * _proj.get(8) + _model.get(15) * _proj.get(12));
-        _clip.put(13, _model.get(12) * _proj.get(1) + _model.get(13) * _proj.get(5) + _model.get(14) * _proj.get(9) + _model.get(15) * _proj.get(13));
-        _clip.put(14, _model.get(12) * _proj.get(2) + _model.get(13) * _proj.get(6) + _model.get(14) * _proj.get(10) + _model.get(15) * _proj.get(14));
-        _clip.put(15, _model.get(12) * _proj.get(3) + _model.get(13) * _proj.get(7) + _model.get(14) * _proj.get(11) + _model.get(15) * _proj.get(15));
+        _clip.put(12, _viewMatrix.get(12) * _projectionMatrix.get(0) + _viewMatrix.get(13) * _projectionMatrix.get(4) + _viewMatrix.get(14) * _projectionMatrix.get(8) + _viewMatrix.get(15) * _projectionMatrix.get(12));
+        _clip.put(13, _viewMatrix.get(12) * _projectionMatrix.get(1) + _viewMatrix.get(13) * _projectionMatrix.get(5) + _viewMatrix.get(14) * _projectionMatrix.get(9) + _viewMatrix.get(15) * _projectionMatrix.get(13));
+        _clip.put(14, _viewMatrix.get(12) * _projectionMatrix.get(2) + _viewMatrix.get(13) * _projectionMatrix.get(6) + _viewMatrix.get(14) * _projectionMatrix.get(10) + _viewMatrix.get(15) * _projectionMatrix.get(14));
+        _clip.put(15, _viewMatrix.get(12) * _projectionMatrix.get(3) + _viewMatrix.get(13) * _projectionMatrix.get(7) + _viewMatrix.get(14) * _projectionMatrix.get(11) + _viewMatrix.get(15) * _projectionMatrix.get(15));
 
         // RIGHT
         _planes[0].setA(_clip.get(3) - _clip.get(0));

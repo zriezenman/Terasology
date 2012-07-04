@@ -22,6 +22,7 @@ import org.terasology.rendering.shader.ShaderProgram;
 import org.terasology.rendering.world.WorldRenderer;
 import org.terasology.utilities.FastRandom;
 
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 import javax.vecmath.Vector4f;
@@ -68,7 +69,12 @@ public class MiniaturizerSystem implements UpdateSubscriberSystem, RenderSystem 
         for (EntityRef entity : entityManager.iteratorEntities(MiniaturizerComponent.class)) {
             MiniaturizerComponent min = entity.getComponent(MiniaturizerComponent.class);
 
-            min.blockGrid.render(false);
+
+            Matrix4f vm = CoreRegistry.get(WorldRenderer.class).getActiveCamera().getViewMatrix();
+            Matrix4f m = new Matrix4f();
+            m.setIdentity();
+
+            min.blockGrid.render(m, vm);
 
             if (min.chunkMesh == null || min.renderPosition == null)
                 continue;

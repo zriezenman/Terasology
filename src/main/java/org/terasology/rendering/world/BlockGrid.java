@@ -16,7 +16,6 @@
 package org.terasology.rendering.world;
 
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.game.CoreRegistry;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.Vector3i;
@@ -26,7 +25,9 @@ import org.terasology.rendering.primitives.Mesh;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;
 
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3d;
+import javax.vecmath.Vector3f;
 import javax.vecmath.Vector4f;
 import java.util.HashSet;
 
@@ -63,7 +64,7 @@ public class BlockGrid implements Renderable {
     }
 
     @Override
-    public void render(Matrix4f m, Matrix4f vm, boolean reflected) {
+    public void render(Matrix4f m, Matrix4f vm) {
         ShaderManager.getInstance().enableDefault();
 
         for (int i = 0; i < 2; i++) {
@@ -74,14 +75,12 @@ public class BlockGrid implements Renderable {
             }
 
             for (GridPosition gp : _gridPositions) {
-                GL11.glPushMatrix();
+                Matrix4f modelMatrix = new Matrix4f(m);
 
                 Vector3d cameraPosition = CoreRegistry.get(WorldRenderer.class).getActiveCamera().getPosition();
-                GL11.glTranslated(gp.position.x - cameraPosition.x, gp.position.y - cameraPosition.y, gp.position.z - cameraPosition.z);
+                modelMatrix.setTranslation(new Vector3f((float) (gp.position.x - cameraPosition.x), (float) (gp.position.y - cameraPosition.y), (float) (gp.position.z - cameraPosition.z)));
 
-                _mesh.render();
-
-                GL11.glPopMatrix();
+                _mesh.render(m,vm);
             }
         }
     }
@@ -143,10 +142,5 @@ public class BlockGrid implements Renderable {
         _minBounds = new Vector3i(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
         _maxBounds = new Vector3i(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
         _gridPositions.clear();
-    }
-
-    @Override
-    public void update(float delta) {
-        // Nothing to do.
     }
 }

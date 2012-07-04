@@ -17,10 +17,11 @@ package org.terasology.rendering.cameras;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.logic.manager.Config;
+import org.terasology.math.TeraMath;
 import org.terasology.model.structures.ViewFrustum;
 
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3d;
 
 import java.nio.FloatBuffer;
@@ -47,55 +48,11 @@ public abstract class Camera {
     protected Matrix4f _reflectedNormalizedViewMatrix = new Matrix4f();
     protected Matrix4f _normalizedViewMatrix = new Matrix4f();
     protected Matrix4f _projectionMatrix = new Matrix4f();
+    protected Matrix4f _viewProjectionMatrix = new Matrix4f();
+    protected Matrix4f _viewProjectionMatrixInv = new Matrix4f();
 
     /* VIEW FRUSTUM */
     protected final ViewFrustum _viewFrustum = new ViewFrustum();
-
-    /**
-     * Applies the projection and modelview matrix.
-     */
-    public void lookThrough() {
-        loadProjectionMatrix();
-        loadViewMatrix();
-    }
-
-    public void lookThroughReflected() {
-        loadProjectionMatrix();
-        loadReflectedViewMatrix();
-    }
-
-    public void lookThroughNormalizedReflected() {
-        loadProjectionMatrix();
-        loadReflectedNormalizedViewMatrix();
-    }
-
-    /**
-     * Applies the projection and the normalized modelview matrix (positioned at the origin without any offset like bobbing) .
-     */
-    public void lookThroughNormalized() {
-        loadProjectionMatrix();
-        loadNormalizedViewMatrix();
-    }
-
-    public void loadProjectionMatrix() {
-        loadProjectionMatrix(_projectionMatrix);
-    }
-
-    public void loadViewMatrix() {
-        loadModelViewMatrix(_viewMatrix);
-    }
-
-    public void loadNormalizedViewMatrix() {
-        loadModelViewMatrix(_normalizedViewMatrix);
-    }
-
-    public void loadReflectedNormalizedViewMatrix() {
-        loadModelViewMatrix(_reflectedNormalizedViewMatrix);
-    }
-
-    public void loadReflectedViewMatrix() {
-        loadModelViewMatrix(_reflectedViewMatrix);
-    }
 
     public Matrix4f getViewMatrix() {
         return _viewMatrix;
@@ -113,6 +70,10 @@ public abstract class Camera {
         return _reflectedViewMatrix;
     }
 
+    public Matrix4f getReflectedNormalizedViewMatrix() {
+        return _reflectedNormalizedViewMatrix;
+    }
+
     protected abstract Matrix4f calcViewMatrix(boolean reflected);
 
     protected abstract Matrix4f calcProjectionMatrix(float fov);
@@ -124,22 +85,13 @@ public abstract class Camera {
     }
 
     public void loadModelViewMatrix(Matrix4f m) {
-        FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
-        m.store(buffer);
-        buffer.flip();
-
-        glLoadMatrix(buffer);
-        _viewFrustum.updateFrustum();
+        glLoadMatrix(TeraMath.matrixToFloatBuffer(m));
+        _viewFrustum.updateFrustum(m, _projectionMatrix);
     }
 
     public void loadProjectionMatrix(Matrix4f m) {
         glMatrixMode(GL11.GL_PROJECTION);
-
-        FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
-        m.store(buffer);
-        buffer.flip();
-
-        glLoadMatrix(buffer);
+        glLoadMatrix(TeraMath.matrixToFloatBuffer(m));
         glMatrixMode(GL11.GL_MODELVIEW);
     }
 
@@ -181,6 +133,10 @@ public abstract class Camera {
         _normalizedViewMatrix = calcNormalizedViewMatrix(false);
         _reflectedViewMatrix = calcViewMatrix(true);
         _reflectedNormalizedViewMatrix = calcNormalizedViewMatrix(true);
+
+        _viewProjectionMatrix = TeraMath.calcViewProjectionMatrix(_viewMatrix, _projectionMatrix);
+
+        _viewFrustum.updateFrustum(_viewMatrix, _projectionMatrix);
     }
 
     public void extendFov(float fov) {

@@ -20,13 +20,15 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.util.vector.Matrix4f;
 import org.newdawn.slick.util.ResourceLoader;
 import org.terasology.logic.manager.Config;
 import org.terasology.logic.manager.ShaderManager;
+import org.terasology.math.TeraMath;
 import org.terasology.model.blocks.Block;
 import org.terasology.rendering.assets.Shader;
 
+import javax.vecmath.Matrix3f;
+import javax.vecmath.Matrix4f;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -227,12 +229,23 @@ public class ShaderProgram {
     public void setMatrix4(String desc, Matrix4f m) {
         enable();
         int id = GL20.glGetUniformLocation(_shaderProgram, desc);
+        GL20.glUniformMatrix4(id, false, TeraMath.matrixToFloatBuffer(m));
+    }
 
-        FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
-        m.store(buffer);
-        buffer.flip();
+    public void setMatrix3(String desc, Matrix3f m) {
+        enable();
+        int id = GL20.glGetUniformLocation(_shaderProgram, desc);
+        GL20.glUniformMatrix3(id, false, TeraMath.matrixToFloatBuffer(m));
+    }
 
-        GL20.glUniformMatrix4(id, false, buffer);
+    public void setAndCalcRenderingMatrices(Matrix4f modelMatrix, Matrix4f viewMatrix, Matrix4f projectionMatrix) {
+        setMatrix4("modelMatrix", modelMatrix);
+        setMatrix4("viewMatrix", viewMatrix);
+
+        Matrix4f modelViewMatrix = TeraMath.calcModelViewMatrix(modelMatrix, viewMatrix);
+        setMatrix4("modelViewMatrix", modelViewMatrix);
+        setMatrix4("viewProjectionMatrix", TeraMath.calcViewProjectionMatrix(viewMatrix, projectionMatrix));
+        setMatrix3("normalMatrix", TeraMath.calcNormalMatrix(modelViewMatrix));
     }
 
     public IShaderParameters getShaderParameters() {

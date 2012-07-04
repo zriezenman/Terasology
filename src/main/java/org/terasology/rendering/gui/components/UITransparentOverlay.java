@@ -44,12 +44,12 @@ public class UITransparentOverlay extends UIDisplayElement {
 
     @Override
     public void render() {
-        if (_mesh != null) {
-            glPushMatrix();
-            glScalef(getSize().x, getSize().y, 0.0f);
-            _mesh.render();
-            glPopMatrix();
-        }
+//        if (_mesh != null) {
+//            glPushMatrix();
+//            glScalef(getSize().x, getSize().y, 0.0f);
+//            _mesh.render();
+//            glPopMatrix();
+//        }
     }
 
     @Override

@@ -298,7 +298,7 @@ public class BulletPhysicsRenderer implements Renderable, Updatable {
     }
 
     @Override
-    public void render(org.lwjgl.util.vector.Matrix4f m, org.lwjgl.util.vector.Matrix4f vm, boolean reflected) {
+    public void render(Matrix4f m, Matrix4f vm) {
         Vector3d cameraPosition = _parent.getActiveCamera().getPosition();
 
         float[] mFloat = new float[16];
@@ -312,29 +312,23 @@ public class BulletPhysicsRenderer implements Renderable, Updatable {
                 br.getMotionState().getWorldTransform(t);
                 t.getOpenGLMatrix(mFloat);
 
-                FloatBuffer mBuffer = BufferUtils.createFloatBuffer(16);
-                mBuffer.put(mFloat);
-                mBuffer.flip();
+                Matrix4f modelMatrix = new Matrix4f(mFloat);
+                modelMatrix.transpose();
 
-                org.lwjgl.util.vector.Matrix4f modelMatrix = new org.lwjgl.util.vector.Matrix4f();
-                modelMatrix.load(mBuffer);
+                m.mul(modelMatrix);
 
-                if (reflected) {
-                    vm = new org.lwjgl.util.vector.Matrix4f(CoreRegistry.get(WorldRenderer.class).getActiveCamera().getReflectedViewMatrix());
-                }
-                else {
-                    vm = new org.lwjgl.util.vector.Matrix4f(CoreRegistry.get(WorldRenderer.class).getActiveCamera().getViewMatrix());
-                }
+                Matrix4f viewMatrix = new Matrix4f();
+                viewMatrix.setIdentity();
+                viewMatrix.setTranslation(new Vector3f((float) -cameraPosition.x, (float)  -cameraPosition.y, (float)  -cameraPosition.z));
 
-
-                vm.translate(new org.lwjgl.util.vector.Vector3f((float) -cameraPosition.x, (float)  -cameraPosition.y, (float)  -cameraPosition.z));
+                viewMatrix.mul(vm, viewMatrix);
 
                 if (br.getCollisionShape() == _blockShapeHalf)
-                    modelMatrix.scale(new org.lwjgl.util.vector.Vector3f(0.5f, 0.5f, 0.5f));
+                    modelMatrix.setScale(0.5f);
                 else if (br.getCollisionShape() == _blockShapeQuarter)
-                    modelMatrix.scale(new org.lwjgl.util.vector.Vector3f(0.25f, 0.25f, 0.25f));
+                    modelMatrix.setScale(0.25f);
 
-                block.renderWithLightValue(_parent.getRenderingLightValueAt(t.origin), modelMatrix, vm, reflected);
+                block.renderWithLightValue(_parent.getRenderingLightValueAt(t.origin), modelMatrix, viewMatrix);
             }
         }
     }

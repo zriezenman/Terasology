@@ -305,7 +305,7 @@ public class Icon {
             glBindTexture(GL11.GL_TEXTURE_2D, terrainTex.getId());
 
             Block block = _blockFamily.getArchetypeBlock();
-            block.render(false);
+            //block.render(false);
 
             GL11.glPopMatrix();
 

@@ -66,6 +66,7 @@ public class MeshRenderer implements RenderSystem {
             Vector3f worldPos = location.getWorldPosition();
             Vector3d extents = new Vector3d(collision.getExtents());
             float worldScale = location.getWorldScale();
+
             extents.scale(worldScale);
             AABB aabb = new AABB(new Vector3d(worldPos), new Vector3d(collision.getExtents()));
 
@@ -84,7 +85,7 @@ public class MeshRenderer implements RenderSystem {
                 shader.setFloat4("colorOffset", meshComp.color.x, meshComp.color.y, meshComp.color.z, meshComp.color.w);
                 shader.setFloat("light", worldRenderer.getRenderingLightValueAt(worldPos));
 
-                mesh.render();
+                //mesh.render();
 
                 glPopMatrix();
             }
@@ -122,7 +123,7 @@ public class MeshRenderer implements RenderSystem {
                 meshComp.material.setFloat("light", worldRenderer.getRenderingLightValueAt(worldPos));
                 meshComp.material.setInt("carryingTorch", carryingTorch ? 1 : 0);
                 meshComp.material.bindTextures();
-                meshComp.mesh.render();
+                //meshComp.mesh.render();
 
                 glPopMatrix();
             }

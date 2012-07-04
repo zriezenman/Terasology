@@ -20,14 +20,17 @@ varying vec4 vertexWorldPosRaw;
 
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat3 normalMatrix;
+uniform mat4 viewProjectionMatrix;
 
 void main()
 {
-	vertexWorldPos = viewMatrix * modelMatrix * gl_Vertex;
+	vertexWorldPos = modelViewMatrix * gl_Vertex;
 	vertexWorldPosRaw = modelMatrix * gl_Vertex;
-    normal = gl_NormalMatrix * gl_Normal;
+    normal = normalMatrix * gl_Normal;
 
-	gl_Position = gl_ProjectionMatrix * vertexWorldPos;
+	gl_Position = viewProjectionMatrix * vertexWorldPosRaw;
     gl_TexCoord[0] = gl_MultiTexCoord0;
     gl_FrontColor = gl_Color;
 }

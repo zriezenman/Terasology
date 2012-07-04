@@ -35,19 +35,25 @@ uniform vec3 chunkOffset;
 
 uniform float animated;
 
+uniform mat4 viewMatrix;
+uniform mat4 modelMatrix;
+uniform mat4 viewProjectionMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat3 normalMatrix;
+
 void main()
 {
 	gl_TexCoord[0] = gl_MultiTexCoord0;
     gl_TexCoord[1] = gl_MultiTexCoord1;
 
-	vertexWorldPosRaw = gl_Vertex;
+	vertexWorldPosRaw = modelMatrix * gl_Vertex;
 
-	vertexWorldPos = gl_ModelViewMatrix * vertexWorldPosRaw;
+	vertexWorldPos = modelViewMatrix * vertexWorldPosRaw;
 
 	lightDir = gl_LightSource[0].position.xyz;
 	eyeVec = -vertexWorldPos.xyz;
 
-    normal = gl_NormalMatrix * gl_Normal;
+    normal = normalMatrix * gl_Normal;
     gl_FrontColor = gl_Color;
 
 #ifdef FLICKERING_LIGHT
@@ -83,6 +89,6 @@ void main()
 
 #endif
 
-    vertexPos = gl_ProjectionMatrix * vertexWorldPos;
+    vertexPos = viewProjectionMatrix * vertexWorldPosRaw;
     gl_Position = vertexPos;
 }

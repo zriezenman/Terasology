@@ -71,7 +71,7 @@ public class UIGraphicsElement extends UIDisplayElement {
             glRotatef(_rotate, 0f, 0f, 1f);
         }
         glScalef(getSize().x, getSize().y, 1.0f);
-        _mesh.render();
+        //_mesh.render();
         glPopMatrix();
 
         glMatrixMode(GL_TEXTURE);

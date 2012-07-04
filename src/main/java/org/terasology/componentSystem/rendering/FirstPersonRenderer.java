@@ -3,7 +3,6 @@ package org.terasology.componentSystem.rendering;
 import com.google.common.collect.Maps;
 import org.lwjgl.BufferChecks;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.componentSystem.RenderSystem;
 import org.terasology.components.CharacterMovementComponent;
 import org.terasology.components.InventoryComponent;
@@ -30,9 +29,7 @@ import org.terasology.rendering.primitives.TessellatorHelper;
 import org.terasology.rendering.shader.ShaderProgram;
 import org.terasology.rendering.world.WorldRenderer;
 
-import javax.vecmath.Vector2f;
-import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
+import javax.vecmath.*;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -117,16 +114,22 @@ public class FirstPersonRenderer implements RenderSystem {
         Matrix4f modelMatrix = new Matrix4f();
         modelMatrix.setIdentity();
 
-        modelMatrix.translate(new org.lwjgl.util.vector.Vector3f(0.8f, -0.8f + bobOffset - handMovementAnimationOffset * 0.5f, -1.0f - handMovementAnimationOffset * 0.5f));
-        modelMatrix.rotate(TeraMath.DEG_TO_RAD * (-45f - handMovementAnimationOffset * 64.0f), new org.lwjgl.util.vector.Vector3f(1.0f, 0.0f, 0.0f));
-        modelMatrix.rotate(TeraMath.DEG_TO_RAD * -35f, new org.lwjgl.util.vector.Vector3f(0.0f, 1.0f, 0.0f));
-        modelMatrix.translate(new org.lwjgl.util.vector.Vector3f(0f, 0.25f, 0f));
-        modelMatrix.scale(new org.lwjgl.util.vector.Vector3f(0.4f, 0.6f, 0.3f));
+        modelMatrix.setTranslation(new Vector3f(0.5f, -0.8f + bobOffset - handMovementAnimationOffset * 0.5f + 0.25f, -1.0f - handMovementAnimationOffset * 0.5f));
+        modelMatrix.m00 = 0.4f;
+        modelMatrix.m11 = 0.6f;
+        modelMatrix.m22 = 0.3f;
 
-        shader.setMatrix4("modelMatrix", modelMatrix);
-        shader.setMatrix4("viewMatrix", viewMatrix);
+        Quat4f rotation1 = new Quat4f();
+        Quat4f rotation2 = new Quat4f();
+        rotation1.set(new AxisAngle4f(new Vector3f(1.0f, 0.0f, 0.0f), TeraMath.DEG_TO_RAD * (-45f - handMovementAnimationOffset * 64.0f)));
+        rotation2.set(new AxisAngle4f(new Vector3f(0.0f, 1.0f, 0.0f), TeraMath.DEG_TO_RAD * -35f));
+        rotation1.mul(rotation2);
 
-        handMesh.render();
+        modelMatrix.setRotation(rotation1);
+
+        shader.setAndCalcRenderingMatrices(modelMatrix, viewMatrix, CoreRegistry.get(WorldRenderer.class).getActiveCamera().getProjectionMatrix());
+
+        handMesh.render(viewMatrix,  modelMatrix);
     }
 
     private void renderIcon(String iconName, float bobOffset, float handMovementAnimationOffset) {
@@ -142,14 +145,26 @@ public class FirstPersonRenderer implements RenderSystem {
         Matrix4f modelMatrix = new Matrix4f();
         modelMatrix.setIdentity();
 
-        modelMatrix.translate(new org.lwjgl.util.vector.Vector3f(1.0f, -0.7f + bobOffset - handMovementAnimationOffset * 0.5f, -1.5f - handMovementAnimationOffset * 0.5f));
-        modelMatrix.rotate(TeraMath.DEG_TO_RAD * (-handMovementAnimationOffset * 64.0f), new org.lwjgl.util.vector.Vector3f(1.0f, 0.0f, 0.0f));
-        modelMatrix.rotate(TeraMath.DEG_TO_RAD * -20f, new org.lwjgl.util.vector.Vector3f(1.0f, 0.0f, 0.0f));
-        modelMatrix.rotate(TeraMath.DEG_TO_RAD * -80f, new org.lwjgl.util.vector.Vector3f(0.0f, 1.0f, 0.0f));
-        modelMatrix.rotate(TeraMath.DEG_TO_RAD * 45f, new org.lwjgl.util.vector.Vector3f(0.0f, 0.0f, 1.0f));
+        modelMatrix.setTranslation(new Vector3f(1.0f, -0.7f + bobOffset - handMovementAnimationOffset * 0.5f, -1.5f - handMovementAnimationOffset * 0.5f));
 
-        shader.setMatrix4("modelMatrix", modelMatrix);
-        shader.setMatrix4("viewMatrix", viewMatrix);
+        // TODO: Holy... Please optimize this.
+        Quat4f rotation1 = new Quat4f();
+        Quat4f rotation2 = new Quat4f();
+        Quat4f rotation3 = new Quat4f();
+        Quat4f rotation4 = new Quat4f();
+
+        rotation1.set(new AxisAngle4f(new Vector3f(1.0f, 0.0f, 0.0f), TeraMath.DEG_TO_RAD * (-handMovementAnimationOffset * 64.0f)));
+        rotation2.set(new AxisAngle4f(new Vector3f(1.0f, 0.0f, 0.0f), TeraMath.DEG_TO_RAD * -20f));
+        rotation3.set(new AxisAngle4f(new Vector3f(0.0f, 1.0f, 0.0f), TeraMath.DEG_TO_RAD * -80f));
+        rotation4.set(new AxisAngle4f(new Vector3f(0.0f, 0.0f, 1.0f), TeraMath.DEG_TO_RAD * 45f));
+
+        rotation1.mul(rotation2);
+        rotation1.mul(rotation3);
+        rotation1.mul(rotation4);
+
+        modelMatrix.setRotation(rotation1);
+
+        shader.setAndCalcRenderingMatrices(modelMatrix, viewMatrix, CoreRegistry.get(WorldRenderer.class).getActiveCamera().getProjectionMatrix());
 
         Mesh itemMesh = iconMeshes.get(iconName);
         if (itemMesh == null) {
@@ -158,7 +173,7 @@ public class FirstPersonRenderer implements RenderSystem {
             iconMeshes.put(iconName, itemMesh);
         }
 
-        itemMesh.render();
+        itemMesh.render(viewMatrix, modelMatrix);
     }
 
     private void renderBlock(BlockFamily blockFamily, float bobOffset, float handMovementAnimationOffset) {
@@ -188,12 +203,17 @@ public class FirstPersonRenderer implements RenderSystem {
         Matrix4f modelMatrix = new Matrix4f();
         modelMatrix.setIdentity();
 
-        modelMatrix.translate(new org.lwjgl.util.vector.Vector3f(1.0f, -0.7f + bobOffset - handMovementAnimationOffset * 0.5f, -1.5f - handMovementAnimationOffset * 0.5f));
-        modelMatrix.rotate(TeraMath.DEG_TO_RAD * (-25f - handMovementAnimationOffset * 64.0f), new org.lwjgl.util.vector.Vector3f(1.0f, 0.0f, 0.0f));
-        modelMatrix.rotate(TeraMath.DEG_TO_RAD * 35f, new org.lwjgl.util.vector.Vector3f(0.0f, 1.0f, 0.0f));
-        modelMatrix.translate(new org.lwjgl.util.vector.Vector3f(0f, 0.25f, 0f));
+        modelMatrix.setTranslation(new Vector3f(1.0f, -0.7f + bobOffset - handMovementAnimationOffset * 0.5f + 0.25f, -1.5f - handMovementAnimationOffset * 0.5f));
 
-        activeBlock.renderWithLightValue(worldRenderer.getRenderingLightValue(), modelMatrix, viewMatrix, false);
+        Quat4f rotation1 = new Quat4f();
+        Quat4f rotation2 = new Quat4f();
+        rotation1.set(new AxisAngle4f(new Vector3f(1.0f, 0.0f, 0.0f), TeraMath.DEG_TO_RAD * (-25f - handMovementAnimationOffset * 64.0f)));
+        rotation2.set(new AxisAngle4f(new Vector3f(0.0f, 1.0f, 0.0f), TeraMath.DEG_TO_RAD * 35f));
+        rotation1.mul(rotation2);
+
+        modelMatrix.setRotation(rotation1);
+
+        activeBlock.renderWithLightValue(worldRenderer.getRenderingLightValue(), modelMatrix, viewMatrix);
 
         if (activeBlock.isTranslucent()) {
             glDisable(GL11.GL_ALPHA_TEST);

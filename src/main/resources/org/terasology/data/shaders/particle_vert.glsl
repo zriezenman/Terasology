@@ -16,10 +16,16 @@
 
 varying vec4 vertexWorldPos;
 
+uniform mat4 viewMatrix;
+uniform mat4 modelMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat3 normalMatrix;
+uniform mat4 viewProjectionMatrix;
+
 void main()
 {
 	vertexWorldPos = ftransform();
 
-	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+	gl_Position = viewProjectionMatrix * modelMatrix * gl_Vertex;
     gl_TexCoord[0] = gl_MultiTexCoord0;
 }

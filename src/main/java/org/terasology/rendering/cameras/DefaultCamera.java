@@ -18,12 +18,11 @@ package org.terasology.rendering.cameras;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector3f;
 import org.terasology.math.TeraMath;
 
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3d;
+import javax.vecmath.Vector3f;
 
 import java.nio.FloatBuffer;
 
@@ -52,8 +51,8 @@ public class DefaultCamera extends Camera {
         Matrix4f vm = TeraMath.createViewMatrix(0f, (float) _bobbingVerticalOffsetFactor * 2.0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y + (float) _bobbingVerticalOffsetFactor * 2.0f, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
 
         if (reflected) {
-            vm.translate(new Vector3f(0.0f, 2f * ((float) -_position.y + 32f), 0.0f));
-            vm.scale(new Vector3f(1.0f, -1.0f, 1.0f));
+            Matrix4f reflectionMatrix = TeraMath.calcReflectionMatrix(32f, (float) _position.y);
+            vm.mul(reflectionMatrix);
         }
 
         return vm;
@@ -67,7 +66,8 @@ public class DefaultCamera extends Camera {
         Matrix4f vm = TeraMath.createViewMatrix(0f, 0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
 
         if (reflected) {
-            vm.scale(new Vector3f(1.0f, -1.0f, 1.0f));
+            Matrix4f reflectionMatrix = TeraMath.calcReflectionMatrix(0.0f, 0.0f);
+            vm.mul(reflectionMatrix);
         }
 
         return vm;

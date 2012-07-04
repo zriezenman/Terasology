@@ -19,7 +19,6 @@ import com.google.common.collect.Lists;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.componentSystem.RenderSystem;
 import org.terasology.componentSystem.controllers.LocalPlayerSystem;
 import org.terasology.components.AABBCollisionComponent;
@@ -47,12 +46,14 @@ import org.terasology.performanceMonitor.PerformanceMonitor;
 import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.cameras.DefaultCamera;
 import org.terasology.rendering.interfaces.Renderable;
+import org.terasology.rendering.interfaces.Updatable;
 import org.terasology.rendering.physics.BulletPhysicsRenderer;
 import org.terasology.rendering.primitives.ChunkMesh;
 import org.terasology.rendering.primitives.ChunkTessellator;
 import org.terasology.rendering.shader.ShaderProgram;
 
 import javax.imageio.ImageIO;
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 import java.awt.image.BufferedImage;
@@ -74,7 +75,7 @@ import static org.lwjgl.opengl.GL11.*;
  *
  * @author Benjamin Glatzel <benjamin.glatzel@me.com>
  */
-public final class WorldRenderer implements Renderable {
+public final class WorldRenderer implements Updatable {
     public static final int MAX_ANIMATED_CHUNKS = 64;
     public static final int MAX_BILLBOARD_CHUNKS = 64;
     public static final int VERTICAL_SEGMENTS = Config.getInstance().getVerticalChunkMeshSegments();
@@ -442,11 +443,7 @@ public final class WorldRenderer implements Renderable {
         _statRenderedTriangles = 0;
     }
 
-    /**
-     * Renders the world.
-     */
-    @Override
-    public void render(boolean reflected) {
+    public void render() {
         _renderQueueTransparent.add(_bulletRenderer);
         resetStats();
 
@@ -471,7 +468,7 @@ public final class WorldRenderer implements Renderable {
 
         if (_cameraMode == CAMERA_MODE.PLAYER) {
             glClear(GL_DEPTH_BUFFER_BIT);
-            //_activeCamera.updateProjectionMatrix(80f);
+            getActiveCamera().updateProjectionMatrix(80f);
 
             PerformanceMonitor.startActivity("Render First Person");
             for (RenderSystem renderer : _systemManager.iterateRenderSubscribers()) {
@@ -481,20 +478,21 @@ public final class WorldRenderer implements Renderable {
         }
     }
 
-    @Override
-    public void render(Matrix4f m, Matrix4f vm, boolean reflected) {
-    }
-
     public void renderWorld(Camera camera) {
+        Matrix4f vm, m = new Matrix4f();
+        m.setIdentity();
+
         /* SKYSPHERE */
         PerformanceMonitor.startActivity("Render Sky");
-        camera.lookThroughNormalized();
-        _skysphere.render(false);
+        vm = camera.getNormalizedViewMatrix();
+
+        _skysphere.render(m, vm);
         PerformanceMonitor.endActivity();
 
         /* WORLD RENDERING */
         PerformanceMonitor.startActivity("Render World");
-        camera.lookThrough();
+        vm = camera.getViewMatrix();
+
         if (Config.getInstance().isDebugCollision()) {
             renderDebugCollision(camera);
         }
@@ -514,7 +512,6 @@ public final class WorldRenderer implements Renderable {
             renderer.renderOpaque();
         }
 
-
         PerformanceMonitor.endActivity();
 
         PerformanceMonitor.startActivity("Render ChunkOpaque");
@@ -523,7 +520,7 @@ public final class WorldRenderer implements Renderable {
          * FIRST RENDER PASS: OPAQUE ELEMENTS
          */
         while (_renderQueueChunksOpaque.size() > 0)
-            renderChunk(_renderQueueChunksOpaque.poll(), ChunkMesh.RENDER_PHASE.OPAQUE, camera, false);
+            renderChunk(_renderQueueChunksOpaque.poll(), ChunkMesh.RENDER_PHASE.OPAQUE, m, vm);
 
         PerformanceMonitor.endActivity();
 
@@ -536,7 +533,7 @@ public final class WorldRenderer implements Renderable {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         while (_renderQueueChunksSortedBillboards.size() > 0)
-            renderChunk(_renderQueueChunksSortedBillboards.poll(), ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, camera, false);
+            renderChunk(_renderQueueChunksSortedBillboards.poll(), ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, m, vm);
 
         PerformanceMonitor.endActivity();
 
@@ -557,10 +554,10 @@ public final class WorldRenderer implements Renderable {
 
                 if (j == 0) {
                     glColorMask(false, false, false, false);
-                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, camera, false);
+                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, m, vm);
                 } else {
                     glColorMask(true, true, true, true);
-                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, camera, false);
+                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, m, vm);
                 }
             }
         }
@@ -568,7 +565,7 @@ public final class WorldRenderer implements Renderable {
         PerformanceMonitor.startActivity("Render Transparent");
 
         while (_renderQueueTransparent.size() > 0)
-            _renderQueueTransparent.poll().render(false);
+            _renderQueueTransparent.poll().render(m, vm);
         for (RenderSystem renderer : _systemManager.iterateRenderSubscribers()) {
             renderer.renderTransparent();
         }
@@ -593,46 +590,60 @@ public final class WorldRenderer implements Renderable {
     }
 
     public void renderWorldReflection(Camera camera) {
-        PerformanceMonitor.startActivity("Render Sky");
-        camera.lookThroughNormalizedReflected();
-        _skysphere.render(true);
+        ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("chunk");
+        shader.setFloat("clipHeight", 31.5f);
+        shader = ShaderManager.getInstance().getShaderProgram("block");
+        shader.setFloat("clipHeight", 31.5f);
 
-        camera.lookThroughReflected();
+        Matrix4f vm, m = new Matrix4f();
+        m.setIdentity();
+
+        PerformanceMonitor.startActivity("Render Sky");
+        vm = camera.getReflectedNormalizedViewMatrix();
+
+        _skysphere.render(m, vm);
+
+        vm = camera.getReflectedViewMatrix();
 
         glEnable(GL_LIGHT0);
 
         for (Chunk c : _renderQueueChunksOpaque)
-            renderChunk(c, ChunkMesh.RENDER_PHASE.OPAQUE, camera, true);
+            renderChunk(c, ChunkMesh.RENDER_PHASE.OPAQUE, m, vm);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         for (Chunk c : _renderQueueChunksSortedBillboards)
-            renderChunk(c, ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, camera, true);
+            renderChunk(c, ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, m, vm);
 
         for (Renderable g : _renderQueueTransparent)
-            g.render(true);
+            g.render(m, vm);
 
         glDisable(GL_BLEND);
         glDisable(GL_LIGHT0);
+
+        shader = ShaderManager.getInstance().getShaderProgram("chunk");
+        shader.setFloat("clipHeight", 0.0f);
+        shader = ShaderManager.getInstance().getShaderProgram("block");
+        shader.setFloat("clipHeight", 0.0f);
     }
 
-    private void renderChunk(Chunk chunk, ChunkMesh.RENDER_PHASE phase, Camera camera, boolean reflected) {
+    private void renderChunk(Chunk chunk, ChunkMesh.RENDER_PHASE phase, Matrix4f m, Matrix4f vm) {
         if (chunk.getChunkState() == Chunk.State.COMPLETE && chunk.getMesh() != null) {
             ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("chunk");
             // Transfer the world offset of the chunk to the shader for various effects
             shader.setFloat3("chunkOffset", (float) (chunk.getPos().x * Chunk.SIZE_X), (float) (chunk.getPos().y * Chunk.SIZE_Y), (float) (chunk.getPos().z * Chunk.SIZE_Z));
             shader.setFloat("animated", chunk.getAnimated() ? 1.0f: 0.0f);
 
-            if (reflected)
-                shader.setFloat("clipHeight", 31.5f);
-            else
-                shader.setFloat("clipHeight", 0.0f);
+            Vector3d cameraPosition = getActiveCamera().getPosition();
 
-            GL11.glPushMatrix();
+            Matrix4f viewMatrix = new Matrix4f();
+            viewMatrix.setIdentity();
 
-            Vector3d cameraPosition = camera.getPosition();
-            GL11.glTranslated(chunk.getPos().x * Chunk.SIZE_X - cameraPosition.x, chunk.getPos().y * Chunk.SIZE_Y - cameraPosition.y, chunk.getPos().z * Chunk.SIZE_Z - cameraPosition.z);
+            viewMatrix.setTranslation(new Vector3f((float) (chunk.getPos().x * Chunk.SIZE_X - cameraPosition.x), (float) (chunk.getPos().y * Chunk.SIZE_Y - cameraPosition.y), (float) (chunk.getPos().z * Chunk.SIZE_Z - cameraPosition.z)));
+            viewMatrix.mul(vm, viewMatrix);
+
+            shader.setAndCalcRenderingMatrices(m, viewMatrix, getActiveCamera().getProjectionMatrix());
 
             for (int i = 0; i < VERTICAL_SEGMENTS; i++) {
                 if (!chunk.getMesh()[i].isEmpty()) {
@@ -646,8 +657,6 @@ public final class WorldRenderer implements Renderable {
                     _statRenderedTriangles += chunk.getMesh()[i].triangleCount();
                 }
             }
-
-            GL11.glPopMatrix();
         } else {
             _statChunkNotReady++;
         }

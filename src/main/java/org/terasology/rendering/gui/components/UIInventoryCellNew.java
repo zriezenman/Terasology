@@ -232,7 +232,7 @@ public class UIInventoryCellNew extends UIDisplayElement {
         glBindTexture(GL11.GL_TEXTURE_2D, terrainTex.getId());
 
         Block block = blockFamily.getArchetypeBlock();
-        block.render(false);
+        //block.render(false);
 
         GL11.glPopMatrix();
 

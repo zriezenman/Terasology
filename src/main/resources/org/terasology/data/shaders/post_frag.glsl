@@ -26,9 +26,13 @@ uniform float fogIntensity = 0.1;
 uniform float fogLinearIntensity = 0.1;
 uniform float viewingDistance;
 
+uniform mat4 invViewMatrix;
+uniform mat4 invProjMatrix;
+
 #define Z_NEAR 0.1
 #define BLUR_START 0.6
 #define BLUR_LENGTH 0.05
+#define LAYERED_FOG
 
 float linDepth() {
     float z = texture2D(texDepth, gl_TexCoord[0].xy).x;
@@ -38,6 +42,13 @@ float linDepth() {
 void main() {
     /* BLUR */
     vec4 colorBlur = texture2D(texBlur, gl_TexCoord[0].xy);
+
+#if 0
+    float zOverW = texture2D(texDepth, gl_TexCoord[0].xy).x;
+    vec4 screenSpacePos = vec4(gl_TexCoord[0].x, gl_TexCoord[0].y, zOverW, 1.0) * 2.0 - 1.0;
+    vec4 worldSpacePos = invViewMatrix * invProjMatrix * screenSpacePos;
+    vec4 normWorldSpacePos = worldSpacePos / worldSpacePos.w;
+#endif
 
     float depth = linDepth();
     float blur = 0.0;

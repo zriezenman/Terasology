@@ -15,12 +15,17 @@
  */
 package org.terasology.math;
 
+import com.sun.deploy.util.BufferUtil;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.logic.world.Chunk;
 
+import javax.vecmath.Matrix3f;
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3f;
+
+import java.nio.FloatBuffer;
 
 import static org.lwjgl.opengl.GL11.GL_PROJECTION;
 import static org.lwjgl.opengl.GL11.glLoadIdentity;
@@ -379,7 +384,11 @@ public final class TeraMath {
         m.m02 = -f.x; m.m12 = -f.y; m.m22 = -f.z; m.m32 = 0;
         m.m03 = 0; m.m13 = 0; m.m23 = 0; m.m33 = 1;
 
-        m.translate(new org.lwjgl.util.vector.Vector3f(-eye.x, -eye.y, -eye.z));
+        m.m30 = -eye.x;
+        m.m31 = -eye.y;
+        m.m32 = -eye.z;
+
+        m.transpose();
 
         return m;
     }
@@ -397,6 +406,97 @@ public final class TeraMath {
         m.m02 = 0; m.m12 = 0; m.m22 = (zFar + zNear) / (zNear - zFar); m.m32 = (2*zFar*zNear) / (zNear - zFar);
         m.m03 = 0; m.m13 = 0; m.m23 = -1; m.m33 = 0;
 
+        m.transpose();
+
         return m;
+    }
+
+    public static Matrix4f calcViewProjectionMatrix(Matrix4f vm, Matrix4f p) {
+        Matrix4f result = new Matrix4f(); result.mul(p, vm);
+        return result;
+    }
+
+    public static Matrix4f calcModelViewMatrix(Matrix4f m, Matrix4f vm) {
+        Matrix4f result = new Matrix4f(); result.mul(m, vm);
+        return result;
+    }
+
+    public static Matrix3f calcNormalMatrix(Matrix4f mv) {
+        Matrix3f result = new Matrix3f();
+        result.m00 = mv.m00;
+        result.m10 = mv.m10;
+        result.m20 = mv.m20;
+        result.m01 = mv.m01;
+        result.m11 = mv.m11;
+        result.m21 = mv.m21;
+        result.m02 = mv.m02;
+        result.m12 = mv.m12;
+        result.m22 = mv.m22;
+
+        result.invert(); result.transpose();
+        return result;
+    }
+
+    public static void matrixToFloatBuffer(Matrix4f m, FloatBuffer fb) {
+        Matrix4f tempMatrix = new Matrix4f();
+        tempMatrix.transpose(m);
+
+        fb.put(tempMatrix.m00);
+        fb.put(tempMatrix.m01);
+        fb.put(tempMatrix.m02);
+        fb.put(tempMatrix.m03);
+        fb.put(tempMatrix.m10);
+        fb.put(tempMatrix.m11);
+        fb.put(tempMatrix.m12);
+        fb.put(tempMatrix.m13);
+        fb.put(tempMatrix.m20);
+        fb.put(tempMatrix.m21);
+        fb.put(tempMatrix.m22);
+        fb.put(tempMatrix.m23);
+        fb.put(tempMatrix.m30);
+        fb.put(tempMatrix.m31);
+        fb.put(tempMatrix.m32);
+        fb.put(tempMatrix.m33);
+
+        fb.flip();
+    }
+
+    public static FloatBuffer matrixToFloatBuffer(Matrix4f m) {
+        FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
+        matrixToFloatBuffer(m, buffer);
+        return buffer;
+    }
+
+    public static FloatBuffer matrixToFloatBuffer(Matrix3f m) {
+        FloatBuffer buffer = BufferUtils.createFloatBuffer(9);
+        matrixToFloatBuffer(m, buffer);
+        return buffer;
+    }
+
+    public static void matrixToFloatBuffer(Matrix3f m, FloatBuffer fb) {
+        Matrix3f tempMatrix = new Matrix3f();
+        tempMatrix.transpose(m);
+
+        fb.put(tempMatrix.m00);
+        fb.put(tempMatrix.m01);
+        fb.put(tempMatrix.m02);
+        fb.put(tempMatrix.m10);
+        fb.put(tempMatrix.m11);
+        fb.put(tempMatrix.m12);
+        fb.put(tempMatrix.m20);
+        fb.put(tempMatrix.m21);
+        fb.put(tempMatrix.m22);
+
+        fb.flip();
+    }
+
+    public static Matrix4f calcReflectionMatrix(float planeHeight, float playerHeight) {
+        Matrix4f result = new Matrix4f();
+        result.setIdentity();
+
+        result.m13 = 2f * (-playerHeight + planeHeight);
+        result.m11 = -1.0f;
+
+        return result;
     }
 }

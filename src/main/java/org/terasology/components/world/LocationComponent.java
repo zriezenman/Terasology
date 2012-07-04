@@ -1,6 +1,7 @@
 package org.terasology.components.world;
 
 import com.bulletphysics.linearmath.QuaternionUtil;
+import org.lwjgl.util.vector.Matrix4f;
 import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.EntityRef;
 

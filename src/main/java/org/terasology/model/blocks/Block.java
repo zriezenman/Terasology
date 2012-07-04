@@ -16,11 +16,12 @@
 package org.terasology.model.blocks;
 
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.vector.Matrix4f;
 import org.newdawn.slick.util.ResourceLoader;
 import org.terasology.collection.EnumBooleanMap;
+import org.terasology.game.CoreRegistry;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.Side;
+import org.terasology.math.TeraMath;
 import org.terasology.model.shapes.BlockMeshPart;
 import org.terasology.model.structures.AABB;
 import org.terasology.model.structures.BlockPosition;
@@ -28,8 +29,10 @@ import org.terasology.rendering.interfaces.Renderable;
 import org.terasology.rendering.primitives.Mesh;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.shader.ShaderProgram;
+import org.terasology.rendering.world.WorldRenderer;
 
 import javax.imageio.ImageIO;
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector2f;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector4f;
@@ -251,7 +254,7 @@ public class Block implements Renderable {
         return new Vector2f(pos.x * TEXTURE_OFFSET, pos.y * TEXTURE_OFFSET);
     }
 
-    public void renderWithLightValue(float light, Matrix4f m, Matrix4f vm, boolean reflected) {
+    public void renderWithLightValue(float light, Matrix4f m, Matrix4f vm) {
         if (isInvisible())
             return;
 
@@ -259,13 +262,7 @@ public class Block implements Renderable {
         shader.enable();
         shader.setFloat("light", light);
 
-        shader.setMatrix4("modelMatrix", m);
-        shader.setMatrix4("viewMatrix", vm);
-
-        if (reflected)
-            shader.setFloat("clipHeight", 31.5f);
-        else
-            shader.setFloat("clipHeight", 0.0f);
+        shader.setAndCalcRenderingMatrices(m, vm, CoreRegistry.get(WorldRenderer.class).getActiveCamera().getProjectionMatrix());
 
         if (_mesh == null) {
             Tessellator tessellator = new Tessellator();
@@ -285,17 +282,17 @@ public class Block implements Renderable {
         }
 
         if (getBlockForm() != BLOCK_FORM.BILLBOARD || !glIsEnabled(GL11.GL_CULL_FACE)) {
-            _mesh.render();
+            _mesh.render(m, vm);
         } else {
             glDisable(GL11.GL_CULL_FACE);
-            _mesh.render();
+            _mesh.render(m, vm);
             glEnable(GL11.GL_CULL_FACE);
         }
     }
 
     @Override
-    public void render(Matrix4f m, Matrix4f vm, boolean reflected) {
-        renderWithLightValue(1.0f, m, vm, reflected);
+    public void render(Matrix4f m, Matrix4f vm) {
+        renderWithLightValue(1.0f, m, vm);
     }
 
     // TODO: Change all of these to setters
