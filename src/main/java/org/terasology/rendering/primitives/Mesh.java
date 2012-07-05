@@ -26,6 +26,7 @@ import org.lwjgl.opengl.GL15;
 import org.terasology.asset.Asset;
 import org.terasology.asset.AssetUri;
 import org.terasology.logic.manager.VertexBufferObjectManager;
+import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.interfaces.Renderable;
 
 import javax.vecmath.Matrix4f;
@@ -162,7 +163,7 @@ public class Mesh implements Asset, Renderable {
 
 
     @Override
-    public void render(Matrix4f m, Matrix4f vm) {
+    public void render(Camera cam) {
         glEnableClientState(GL_VERTEX_ARRAY);
         if (hasTexCoord0 || hasTexCoord1) glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         if (hasColor) glEnableClientState(GL_COLOR_ARRAY);

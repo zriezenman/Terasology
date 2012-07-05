@@ -48,6 +48,7 @@ import org.terasology.logic.manager.AudioManager;
 import org.terasology.logic.world.Chunk;
 import org.terasology.model.blocks.Block;
 import org.terasology.model.blocks.management.BlockManager;
+import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.interfaces.Renderable;
 import org.terasology.rendering.interfaces.Updatable;
 import org.terasology.rendering.primitives.ChunkMesh;
@@ -298,7 +299,7 @@ public class BulletPhysicsRenderer implements Renderable, Updatable {
     }
 
     @Override
-    public void render(Matrix4f m, Matrix4f vm) {
+    public void render(Matrix4f m, Camera cam) {
         Vector3d cameraPosition = _parent.getActiveCamera().getPosition();
 
         float[] mFloat = new float[16];
@@ -317,11 +318,11 @@ public class BulletPhysicsRenderer implements Renderable, Updatable {
 
                 m.mul(modelMatrix);
 
-                Matrix4f viewMatrix = new Matrix4f();
-                viewMatrix.setIdentity();
-                viewMatrix.setTranslation(new Vector3f((float) -cameraPosition.x, (float)  -cameraPosition.y, (float)  -cameraPosition.z));
+                Matrix4f translation = new Matrix4f();
+                translation.setIdentity();
+                translation.setTranslation(new Vector3f((float) -cameraPosition.x, (float)  -cameraPosition.y, (float)  -cameraPosition.z));
 
-                viewMatrix.mul(vm, viewMatrix);
+                modelMatrix.mul(modelMatrix, modelMatrix);
 
                 if (br.getCollisionShape() == _blockShapeHalf)
                     modelMatrix.setScale(0.5f);

@@ -49,7 +49,7 @@ public abstract class Camera {
     protected Matrix4f _normalizedViewMatrix = new Matrix4f();
     protected Matrix4f _projectionMatrix = new Matrix4f();
     protected Matrix4f _viewProjectionMatrix = new Matrix4f();
-    protected Matrix4f _viewProjectionMatrixInv = new Matrix4f();
+    protected Matrix4f _prevViewProjectionMatrix = new Matrix4f();
 
     /* VIEW FRUSTUM */
     protected final ViewFrustum _viewFrustum = new ViewFrustum();
@@ -72,6 +72,14 @@ public abstract class Camera {
 
     public Matrix4f getReflectedNormalizedViewMatrix() {
         return _reflectedNormalizedViewMatrix;
+    }
+
+    public Matrix4f getViewProjectionMatrix() {
+        return _viewProjectionMatrix;
+    }
+
+    public Matrix4f getPrevViewProjectionMatrix() {
+        return _prevViewProjectionMatrix;
     }
 
     protected abstract Matrix4f calcViewMatrix(boolean reflected);
@@ -134,6 +142,7 @@ public abstract class Camera {
         _reflectedViewMatrix = calcViewMatrix(true);
         _reflectedNormalizedViewMatrix = calcNormalizedViewMatrix(true);
 
+        _prevViewProjectionMatrix = _viewProjectionMatrix;
         _viewProjectionMatrix = TeraMath.calcViewProjectionMatrix(_viewMatrix, _projectionMatrix);
 
         _viewFrustum.updateFrustum(_viewMatrix, _projectionMatrix);

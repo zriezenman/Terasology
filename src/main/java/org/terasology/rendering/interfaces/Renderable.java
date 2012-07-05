@@ -16,6 +16,8 @@
 package org.terasology.rendering.interfaces;
 
 
+import org.terasology.rendering.cameras.Camera;
+
 import javax.vecmath.Matrix4f;
 
 /**
@@ -27,6 +29,6 @@ public interface Renderable {
     /**
      * Rendering operations have to implement this method.
      */
-    public void render(Matrix4f m, Matrix4f vm);
+    public void render(Matrix4f m, Camera cam);
 
 }

@@ -25,6 +25,7 @@ import org.terasology.math.TeraMath;
 import org.terasology.model.shapes.BlockMeshPart;
 import org.terasology.model.structures.AABB;
 import org.terasology.model.structures.BlockPosition;
+import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.interfaces.Renderable;
 import org.terasology.rendering.primitives.Mesh;
 import org.terasology.rendering.primitives.Tessellator;
@@ -254,7 +255,7 @@ public class Block implements Renderable {
         return new Vector2f(pos.x * TEXTURE_OFFSET, pos.y * TEXTURE_OFFSET);
     }
 
-    public void renderWithLightValue(float light, Matrix4f m, Matrix4f vm) {
+    public void renderWithLightValue(float light, Matrix4f m, Camera cam) {
         if (isInvisible())
             return;
 
@@ -262,7 +263,7 @@ public class Block implements Renderable {
         shader.enable();
         shader.setFloat("light", light);
 
-        shader.setAndCalcRenderingMatrices(m, vm, CoreRegistry.get(WorldRenderer.class).getActiveCamera().getProjectionMatrix());
+        shader.setAndCalcRenderingMatrices(m, cam.getViewMatrix(), cam.getProjectionMatrix());
 
         if (_mesh == null) {
             Tessellator tessellator = new Tessellator();
@@ -282,17 +283,17 @@ public class Block implements Renderable {
         }
 
         if (getBlockForm() != BLOCK_FORM.BILLBOARD || !glIsEnabled(GL11.GL_CULL_FACE)) {
-            _mesh.render(m, vm);
+            _mesh.render(m, cam);
         } else {
             glDisable(GL11.GL_CULL_FACE);
-            _mesh.render(m, vm);
+            _mesh.render(m, cam);
             glEnable(GL11.GL_CULL_FACE);
         }
     }
 
     @Override
-    public void render(Matrix4f m, Matrix4f vm) {
-        renderWithLightValue(1.0f, m, vm);
+    public void render(Matrix4f m, Camera cam) {
+        renderWithLightValue(1.0f, m, cam);
     }
 
     // TODO: Change all of these to setters

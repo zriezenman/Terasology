@@ -301,13 +301,12 @@ public class PostProcessingRenderer {
         shaderPost.enable();
 
         Camera c = CoreRegistry.get(WorldRenderer.class).getActiveCamera();
-        Matrix4f vm = new Matrix4f(c.getViewMatrix());
-        vm.invert();
-        Matrix4f pm = new Matrix4f(c.getProjectionMatrix());
-        pm.invert();
+        Matrix4f ivm = new Matrix4f(c.getViewProjectionMatrix());
+        ivm.invert();
+        Matrix4f pvm = c.getPrevViewProjectionMatrix();
 
-        shaderPost.setMatrix4("invViewMatrix", vm);
-        shaderPost.setMatrix4("invProjMatrix", pm);
+        shaderPost.setMatrix4("invViewProjMatrix", ivm);
+        shaderPost.setMatrix4("prevViewProjMatrix", pvm);
 
         renderFullQuad();
     }

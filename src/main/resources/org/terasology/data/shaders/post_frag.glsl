@@ -26,13 +26,16 @@ uniform float fogIntensity = 0.1;
 uniform float fogLinearIntensity = 0.1;
 uniform float viewingDistance;
 
-uniform mat4 invViewMatrix;
-uniform mat4 invProjMatrix;
+uniform mat4 invViewProjMatrix;
+uniform mat4 prevViewProjMatrix;
 
 #define Z_NEAR 0.1
 #define BLUR_START 0.6
 #define BLUR_LENGTH 0.05
 #define LAYERED_FOG
+
+#define MOTION_BLUR
+#define MOTION_BLUR_SAMPLES 8
 
 float linDepth() {
     float z = texture2D(texDepth, gl_TexCoord[0].xy).x;
@@ -42,13 +45,6 @@ float linDepth() {
 void main() {
     /* BLUR */
     vec4 colorBlur = texture2D(texBlur, gl_TexCoord[0].xy);
-
-#if 0
-    float zOverW = texture2D(texDepth, gl_TexCoord[0].xy).x;
-    vec4 screenSpacePos = vec4(gl_TexCoord[0].x, gl_TexCoord[0].y, zOverW, 1.0) * 2.0 - 1.0;
-    vec4 worldSpacePos = invViewMatrix * invProjMatrix * screenSpacePos;
-    vec4 normWorldSpacePos = worldSpacePos / worldSpacePos.w;
-#endif
 
     float depth = linDepth();
     float blur = 0.0;
@@ -64,6 +60,35 @@ void main() {
 
     color = clamp(color + colorBloom, 0.0, 1.0);
     colorBlur = clamp(colorBlur + colorBloom, 0.0, 1.0);
+
+#ifdef MOTION_BLUR
+    float zOverW = texture2D(texDepth, gl_TexCoord[0].xy).x;
+    vec4 screenSpacePos = vec4(gl_TexCoord[0].x, gl_TexCoord[0].y, zOverW, 1.0) * 2.0 - 1.0;
+    vec4 worldSpacePos = invViewProjMatrix * screenSpacePos;
+    vec4 normWorldSpacePos = worldSpacePos / worldSpacePos.w;
+    vec4 prevScreenSpacePos = prevViewProjMatrix * normWorldSpacePos;
+    prevScreenSpacePos /= prevScreenSpacePos.w;
+
+    vec2 velocity = (screenSpacePos.xy - prevScreenSpacePos.xy) / 12.0;
+
+    if (length(velocity) > 0.005) {
+        velocity = clamp(velocity, vec2(-0.05), vec2(0.05));
+
+        vec2 blurTexCoord = gl_TexCoord[0].xy;
+        blurTexCoord += velocity;
+        for(int i = 1; i < MOTION_BLUR_SAMPLES; ++i, blurTexCoord += velocity)
+        {
+          vec4 currentColor = texture2D(texScene, blurTexCoord);
+          vec4 currentColorBlur = texture2D(texBlur, blurTexCoord);
+
+          color += currentColor;
+          colorBlur += currentColorBlur;
+        }
+
+        color /= MOTION_BLUR_SAMPLES;
+        colorBlur /= MOTION_BLUR_SAMPLES;
+    }
+#endif
 
     /* FINAL MIX */
     vec4 finalColor = mix(color, colorBlur, blur);
@@ -82,5 +107,6 @@ void main() {
     else
         finalColor.rgb *= vig / 4.0;
 
+    //gl_FragColor = vec4(vec3(length(velocity)), 1.0);
     gl_FragColor = finalColor;
 }
