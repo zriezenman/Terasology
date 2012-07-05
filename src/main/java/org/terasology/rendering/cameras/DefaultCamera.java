@@ -43,34 +43,40 @@ public class DefaultCamera extends Camera {
         return TeraMath.createProjectionMatrix(fov, 0.1f, 512f);
     }
 
-    protected Matrix4f calcViewMatrix(boolean reflected) {
-        Vector3d right = new Vector3d();
-        right.cross(_viewingDirection, _up);
-        right.scale(_bobbingRotationOffsetFactor);
+    protected Matrix4f calcViewMatrix() {
+        if (!_normalized) {
 
-        Matrix4f vm = TeraMath.createViewMatrix(0f, (float) _bobbingVerticalOffsetFactor * 2.0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y + (float) _bobbingVerticalOffsetFactor * 2.0f, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
+            Vector3d right = new Vector3d();
+            right.cross(_viewingDirection, _up);
+            right.scale(_bobbingRotationOffsetFactor);
 
-        if (reflected) {
-            Matrix4f reflectionMatrix = TeraMath.calcReflectionMatrix(32f, (float) _position.y);
-            vm.mul(reflectionMatrix);
+            Matrix4f vm = TeraMath.createViewMatrix(0f, (float) _bobbingVerticalOffsetFactor * 2.0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y + (float) _bobbingVerticalOffsetFactor * 2.0f, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
+
+            if (_reflected) {
+                Matrix4f reflectionMatrix = TeraMath.calcReflectionMatrix(32f, (float) _position.y);
+                vm.mul(reflectionMatrix);
+            }
+
+            return vm;
+
+        } else {
+            Vector3d right = new Vector3d();
+            right.cross(_viewingDirection, _up);
+            right.scale(_bobbingRotationOffsetFactor);
+
+            Matrix4f vm = TeraMath.createViewMatrix(0f, 0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
+
+            if (_reflected) {
+                Matrix4f reflectionMatrix = TeraMath.calcReflectionMatrix(0.0f, 0.0f);
+                vm.mul(reflectionMatrix);
+            }
+
+            if (_local) {
+
+            }
+
+            return vm;
         }
-
-        return vm;
-    }
-
-    protected Matrix4f calcNormalizedViewMatrix(boolean reflected) {
-        Vector3d right = new Vector3d();
-        right.cross(_viewingDirection, _up);
-        right.scale(_bobbingRotationOffsetFactor);
-
-        Matrix4f vm = TeraMath.createViewMatrix(0f, 0f, 0f, (float) _viewingDirection.x, (float) _viewingDirection.y, (float) _viewingDirection.z, (float) _up.x + (float) right.x, (float) _up.y + (float) right.y, (float) _up.z + (float) right.z);
-
-        if (reflected) {
-            Matrix4f reflectionMatrix = TeraMath.calcReflectionMatrix(0.0f, 0.0f);
-            vm.mul(reflectionMatrix);
-        }
-
-        return vm;
     }
 
     public void setBobbingRotationOffsetFactor(double f) {

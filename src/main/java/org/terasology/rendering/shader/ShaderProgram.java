@@ -26,6 +26,7 @@ import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.TeraMath;
 import org.terasology.model.blocks.Block;
 import org.terasology.rendering.assets.Shader;
+import org.terasology.rendering.cameras.Camera;
 
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Matrix4f;
@@ -246,6 +247,15 @@ public class ShaderProgram {
         setMatrix4("modelViewMatrix", modelViewMatrix);
         setMatrix4("viewProjectionMatrix", TeraMath.calcViewProjectionMatrix(viewMatrix, projectionMatrix));
         setMatrix3("normalMatrix", TeraMath.calcNormalMatrix(modelViewMatrix));
+    }
+
+    public void setAndCalcRenderingMatrices(Matrix4f modelMatrix, Camera cam, Matrix4f addViewMatrix) {
+        addViewMatrix.mul(cam.getViewMatrix(), addViewMatrix);
+        setAndCalcRenderingMatrices(modelMatrix, addViewMatrix, cam.getProjectionMatrix());
+    }
+
+    public void setAndCalcRenderingMatrices(Matrix4f modelMatrix, Camera cam) {
+        setAndCalcRenderingMatrices(modelMatrix, cam.getViewMatrix(), cam.getProjectionMatrix());
     }
 
     public IShaderParameters getShaderParameters() {

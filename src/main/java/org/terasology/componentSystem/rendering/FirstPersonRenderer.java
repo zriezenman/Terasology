@@ -22,6 +22,7 @@ import org.terasology.model.blocks.Block;
 import org.terasology.model.blocks.BlockFamily;
 import org.terasology.model.inventory.Icon;
 import org.terasology.rendering.assets.Texture;
+import org.terasology.rendering.cameras.LocalCamera;
 import org.terasology.rendering.primitives.Mesh;
 import org.terasology.rendering.primitives.MeshFactory;
 import org.terasology.rendering.primitives.Tessellator;
@@ -108,9 +109,6 @@ public class FirstPersonRenderer implements RenderSystem {
         shader.setFloat("light", worldRenderer.getRenderingLightValue());
         glBindTexture(GL11.GL_TEXTURE_2D, handTex.getId());
 
-        Matrix4f viewMatrix = new Matrix4f();
-        viewMatrix.setIdentity();
-
         Matrix4f modelMatrix = new Matrix4f();
         modelMatrix.setIdentity();
 
@@ -127,9 +125,9 @@ public class FirstPersonRenderer implements RenderSystem {
 
         modelMatrix.setRotation(rotation1);
 
-        shader.setAndCalcRenderingMatrices(modelMatrix, viewMatrix, CoreRegistry.get(WorldRenderer.class).getActiveCamera().getProjectionMatrix());
+        shader.setAndCalcRenderingMatrices(modelMatrix, CoreRegistry.get(LocalCamera.class));
 
-        handMesh.render(viewMatrix,  modelMatrix);
+        handMesh.render(modelMatrix, CoreRegistry.get(LocalCamera.class));
     }
 
     private void renderIcon(String iconName, float bobOffset, float handMovementAnimationOffset) {
@@ -138,9 +136,6 @@ public class FirstPersonRenderer implements RenderSystem {
 
         shader.setInt("textured", 0);
         shader.setFloat("light", worldRenderer.getRenderingLightValue());
-
-        Matrix4f viewMatrix = new Matrix4f();
-        viewMatrix.setIdentity();
 
         Matrix4f modelMatrix = new Matrix4f();
         modelMatrix.setIdentity();
@@ -164,7 +159,7 @@ public class FirstPersonRenderer implements RenderSystem {
 
         modelMatrix.setRotation(rotation1);
 
-        shader.setAndCalcRenderingMatrices(modelMatrix, viewMatrix, CoreRegistry.get(WorldRenderer.class).getActiveCamera().getProjectionMatrix());
+        shader.setAndCalcRenderingMatrices(modelMatrix, CoreRegistry.get(LocalCamera.class));
 
         Mesh itemMesh = iconMeshes.get(iconName);
         if (itemMesh == null) {
@@ -173,7 +168,7 @@ public class FirstPersonRenderer implements RenderSystem {
             iconMeshes.put(iconName, itemMesh);
         }
 
-        itemMesh.render(viewMatrix, modelMatrix);
+        itemMesh.render(modelMatrix, CoreRegistry.get(LocalCamera.class));
     }
 
     private void renderBlock(BlockFamily blockFamily, float bobOffset, float handMovementAnimationOffset) {
@@ -197,9 +192,6 @@ public class FirstPersonRenderer implements RenderSystem {
             glEnable(GL11.GL_ALPHA_TEST);
         }
 
-        Matrix4f viewMatrix = new Matrix4f();
-        viewMatrix.setIdentity();
-
         Matrix4f modelMatrix = new Matrix4f();
         modelMatrix.setIdentity();
 
@@ -213,7 +205,7 @@ public class FirstPersonRenderer implements RenderSystem {
 
         modelMatrix.setRotation(rotation1);
 
-        activeBlock.renderWithLightValue(worldRenderer.getRenderingLightValue(), modelMatrix, viewMatrix);
+        activeBlock.renderWithLightValue(worldRenderer.getRenderingLightValue(), modelMatrix, CoreRegistry.get(LocalCamera.class));
 
         if (activeBlock.isTranslucent()) {
             glDisable(GL11.GL_ALPHA_TEST);

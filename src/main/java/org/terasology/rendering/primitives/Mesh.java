@@ -163,7 +163,7 @@ public class Mesh implements Asset, Renderable {
 
 
     @Override
-    public void render(Camera cam) {
+    public void render(Matrix4f modelMatrix, Camera cam) {
         glEnableClientState(GL_VERTEX_ARRAY);
         if (hasTexCoord0 || hasTexCoord1) glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         if (hasColor) glEnableClientState(GL_COLOR_ARRAY);

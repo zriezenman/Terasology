@@ -20,6 +20,7 @@ import org.terasology.game.CoreRegistry;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.Vector3i;
 import org.terasology.model.structures.BlockPosition;
+import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.interfaces.Renderable;
 import org.terasology.rendering.primitives.Mesh;
 import org.terasology.rendering.primitives.Tessellator;
@@ -64,7 +65,7 @@ public class BlockGrid implements Renderable {
     }
 
     @Override
-    public void render(Matrix4f m, Matrix4f vm) {
+    public void render(Matrix4f m, Camera cam) {
         ShaderManager.getInstance().enableDefault();
 
         for (int i = 0; i < 2; i++) {
@@ -80,7 +81,7 @@ public class BlockGrid implements Renderable {
                 Vector3d cameraPosition = CoreRegistry.get(WorldRenderer.class).getActiveCamera().getPosition();
                 modelMatrix.setTranslation(new Vector3f((float) (gp.position.x - cameraPosition.x), (float) (gp.position.y - cameraPosition.y), (float) (gp.position.z - cameraPosition.z)));
 
-                _mesh.render(m,vm);
+                _mesh.render(m, cam);
             }
         }
     }

@@ -51,6 +51,7 @@ import org.terasology.model.blocks.management.BlockManager;
 import org.terasology.performanceMonitor.PerformanceMonitor;
 import org.terasology.protobuf.EntityData;
 import org.terasology.rendering.cameras.Camera;
+import org.terasology.rendering.cameras.LocalCamera;
 import org.terasology.rendering.gui.menus.UILoadingScreen;
 import org.terasology.rendering.gui.menus.UIStatusScreen;
 import org.terasology.rendering.physics.BulletPhysicsRenderer;
@@ -286,6 +287,7 @@ public class StateSinglePlayer implements GameState {
         CoreRegistry.put(LocalPlayer.class, new LocalPlayer(EntityRef.NULL));
         CoreRegistry.put(Camera.class, worldRenderer.getActiveCamera());
         CoreRegistry.put(BulletPhysicsRenderer.class, worldRenderer.getBulletRenderer());
+        CoreRegistry.put(LocalCamera.class, new LocalCamera());
 
         for (ComponentSystem system : componentSystemManager.iterateAll()) {
             system.initialise();

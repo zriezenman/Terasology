@@ -26,7 +26,9 @@ uniform vec3    zenith;
 
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
-uniform mat4 projectionMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat3 normalMatrix;
+uniform mat4 viewProjectionMatrix;
 
 vec4 eyePos = vec4(0.0, 0.0, 0.0, 1.0);
 
@@ -77,6 +79,6 @@ void main(void)
     skyVec          = v.xyz;
     colorYxy        = allweatherSky ( turbidity, abs(v.y)+0.35, lv, l.y );
     McPosition      = gl_Vertex;
-    gl_Position     = projectionMatrix * viewMatrix * modelMatrix * gl_Vertex;
+    gl_Position     = viewProjectionMatrix * modelMatrix * gl_Vertex;
     gl_TexCoord[0]  = gl_MultiTexCoord0;
 }

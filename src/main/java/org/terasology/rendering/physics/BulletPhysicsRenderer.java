@@ -316,20 +316,14 @@ public class BulletPhysicsRenderer implements Renderable, Updatable {
                 Matrix4f modelMatrix = new Matrix4f(mFloat);
                 modelMatrix.transpose();
 
-                m.mul(modelMatrix);
-
-                Matrix4f translation = new Matrix4f();
-                translation.setIdentity();
-                translation.setTranslation(new Vector3f((float) -cameraPosition.x, (float)  -cameraPosition.y, (float)  -cameraPosition.z));
-
-                modelMatrix.mul(modelMatrix, modelMatrix);
-
                 if (br.getCollisionShape() == _blockShapeHalf)
                     modelMatrix.setScale(0.5f);
                 else if (br.getCollisionShape() == _blockShapeQuarter)
                     modelMatrix.setScale(0.25f);
 
-                block.renderWithLightValue(_parent.getRenderingLightValueAt(t.origin), modelMatrix, viewMatrix);
+                cam.setLocal(true);
+                block.renderWithLightValue(_parent.getRenderingLightValueAt(t.origin), modelMatrix, cam);
+                cam.setLocal(false);
             }
         }
     }

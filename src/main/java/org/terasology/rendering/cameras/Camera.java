@@ -44,75 +44,72 @@ public abstract class Camera {
     protected float _activeFov = Config.getInstance().getFov() / 4f;
 
     protected Matrix4f _viewMatrix = new Matrix4f();
-    protected Matrix4f _reflectedViewMatrix = new Matrix4f();
-    protected Matrix4f _reflectedNormalizedViewMatrix = new Matrix4f();
-    protected Matrix4f _normalizedViewMatrix = new Matrix4f();
     protected Matrix4f _projectionMatrix = new Matrix4f();
     protected Matrix4f _viewProjectionMatrix = new Matrix4f();
     protected Matrix4f _prevViewProjectionMatrix = new Matrix4f();
+
+    protected boolean _dirty = true;
+
+    protected boolean _reflected = false, _normalized = false, _local = false;
 
     /* VIEW FRUSTUM */
     protected final ViewFrustum _viewFrustum = new ViewFrustum();
 
     public Matrix4f getViewMatrix() {
+        if (_dirty) updateMatrices();
         return _viewMatrix;
     }
 
-    public Matrix4f getNormalizedViewMatrix() {
-        return _normalizedViewMatrix;
-    }
-
     public Matrix4f getProjectionMatrix() {
+        if (_dirty) updateMatrices();
         return _projectionMatrix;
     }
 
-    public Matrix4f getReflectedViewMatrix() {
-        return _reflectedViewMatrix;
-    }
-
-    public Matrix4f getReflectedNormalizedViewMatrix() {
-        return _reflectedNormalizedViewMatrix;
-    }
-
     public Matrix4f getViewProjectionMatrix() {
+        if (_dirty) updateMatrices();
         return _viewProjectionMatrix;
     }
 
     public Matrix4f getPrevViewProjectionMatrix() {
+        if (_dirty) updateMatrices();
         return _prevViewProjectionMatrix;
     }
 
-    protected abstract Matrix4f calcViewMatrix(boolean reflected);
+    protected abstract Matrix4f calcViewMatrix();
 
     protected abstract Matrix4f calcProjectionMatrix(float fov);
-
-    protected abstract Matrix4f calcNormalizedViewMatrix(boolean reflected);
 
     public void updateProjectionMatrix(float fov) {
         _projectionMatrix = calcProjectionMatrix(fov);
     }
 
-    public void loadModelViewMatrix(Matrix4f m) {
-        glLoadMatrix(TeraMath.matrixToFloatBuffer(m));
-        _viewFrustum.updateFrustum(m, _projectionMatrix);
-    }
-
-    public void loadProjectionMatrix(Matrix4f m) {
-        glMatrixMode(GL11.GL_PROJECTION);
-        glLoadMatrix(TeraMath.matrixToFloatBuffer(m));
-        glMatrixMode(GL11.GL_MODELVIEW);
-    }
+//    public void loadModelViewMatrix(Matrix4f m) {
+//        glLoadMatrix(TeraMath.matrixToFloatBuffer(m));
+//        _viewFrustum.updateFrustum(m, _projectionMatrix);
+//    }
+//
+//    public void loadProjectionMatrix(Matrix4f m) {
+//        glMatrixMode(GL11.GL_PROJECTION);
+//        glLoadMatrix(TeraMath.matrixToFloatBuffer(m));
+//        glMatrixMode(GL11.GL_MODELVIEW);
+//    }
 
     public Vector3d getPosition() {
         return _position;
+    }
+
+    public void setPosition(double x, double y, double z) {
+        _position.set(x,y,z);
+        _dirty = true;
     }
 
     public Vector3d getViewingDirection() {
         return _viewingDirection;
     }
 
-    public Vector3d getUp() {
-        return _up;
+    public void setViewDirection(double x, double y, double z) {
+        _viewingDirection.set(x,y,z);
+        _dirty = true;
     }
 
     public ViewFrustum getViewFrustum() {
@@ -135,24 +132,38 @@ public abstract class Camera {
             }
         }
 
-        // TODO: Check if something has changed beforehand
-        _viewMatrix = calcViewMatrix(false);
-        updateProjectionMatrix(_activeFov);
-        _normalizedViewMatrix = calcNormalizedViewMatrix(false);
-        _reflectedViewMatrix = calcViewMatrix(true);
-        _reflectedNormalizedViewMatrix = calcNormalizedViewMatrix(true);
-
         _prevViewProjectionMatrix = _viewProjectionMatrix;
-        _viewProjectionMatrix = TeraMath.calcViewProjectionMatrix(_viewMatrix, _projectionMatrix);
+    }
 
+    protected void updateMatrices() {
+        _viewMatrix = calcViewMatrix();
+        updateProjectionMatrix(_activeFov);
+        _viewProjectionMatrix = TeraMath.calcViewProjectionMatrix(_viewMatrix, _projectionMatrix);
         _viewFrustum.updateFrustum(_viewMatrix, _projectionMatrix);
     }
 
     public void extendFov(float fov) {
         _targetFov = Config.getInstance().getFov() + fov;
+        _dirty = true;
     }
 
     public void resetFov() {
         _targetFov = Config.getInstance().getFov();
+        _dirty = true;
+    }
+
+    public void setReflected(boolean r) {
+        _reflected = r;
+        _dirty = true;
+    }
+
+    public void setNormalized(boolean r) {
+        _normalized = r;
+        _dirty = true;
+    }
+
+    public void setLocal(boolean r) {
+        _local = r;
+        _dirty = true;
     }
 }

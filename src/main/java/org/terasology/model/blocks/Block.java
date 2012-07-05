@@ -263,7 +263,7 @@ public class Block implements Renderable {
         shader.enable();
         shader.setFloat("light", light);
 
-        shader.setAndCalcRenderingMatrices(m, cam.getViewMatrix(), cam.getProjectionMatrix());
+        shader.setAndCalcRenderingMatrices(m, cam);
 
         if (_mesh == null) {
             Tessellator tessellator = new Tessellator();

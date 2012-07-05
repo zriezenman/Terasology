@@ -24,6 +24,7 @@ import org.terasology.game.CoreRegistry;
 import org.terasology.logic.manager.AssetManager;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.TeraMath;
+import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.interfaces.Renderable;
 import org.terasology.rendering.shader.ShaderProgram;
 
@@ -54,12 +55,16 @@ public class Skysphere implements Renderable {
 
     private final WorldRenderer _parent;
 
+    private final Matrix4f _modelMatrix = new Matrix4f();
+
     public Skysphere(WorldRenderer parent) {
         _parent = parent;
 
         initTextures();
         loadCubeMap(_textureIds.get(0), "stars", 128);
         loadCubeMap(_textureIds.get(1), "sky", 512);
+
+        _modelMatrix.setIdentity();
     }
 
     private void initTextures() {
@@ -154,7 +159,7 @@ public class Skysphere implements Renderable {
     }
 
     @Override
-    public void render(Matrix4f m, Matrix4f vm) {
+    public void render(Matrix4f m, Camera cam) {
         glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
 
@@ -185,9 +190,7 @@ public class Skysphere implements Renderable {
         shader.setFloat3("zenith", (float) zenithColor.x, (float) zenithColor.y, (float) zenithColor.z);
         shader.setFloat("daylight", (float) getDaylight());
 
-        shader.setMatrix4("projectionMatrix", CoreRegistry.get(WorldRenderer.class).getActiveCamera().getProjectionMatrix());
-        shader.setMatrix4("modelMatrix", m);
-        shader.setMatrix4("viewMatrix", vm);
+        shader.setAndCalcRenderingMatrices(_modelMatrix, cam);
 
         // Draw the skysphere
         drawSphere();

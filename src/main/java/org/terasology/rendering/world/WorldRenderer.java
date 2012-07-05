@@ -452,7 +452,9 @@ public final class WorldRenderer implements Updatable {
         if (Config.getInstance().isComplexWater()) {
             PostProcessingRenderer.getInstance().beginRenderReflectedScene();
             glCullFace(GL11.GL_FRONT);
+            getActiveCamera().setReflected(true);
             renderWorldReflection(getActiveCamera());
+            getActiveCamera().setReflected(false);
             glCullFace(GL11.GL_BACK);
             PostProcessingRenderer.getInstance().endRenderReflectedScene();
         }
@@ -468,7 +470,6 @@ public final class WorldRenderer implements Updatable {
 
         if (_cameraMode == CAMERA_MODE.PLAYER) {
             glClear(GL_DEPTH_BUFFER_BIT);
-            getActiveCamera().updateProjectionMatrix(80f);
 
             PerformanceMonitor.startActivity("Render First Person");
             for (RenderSystem renderer : _systemManager.iterateRenderSubscribers()) {
@@ -479,19 +480,18 @@ public final class WorldRenderer implements Updatable {
     }
 
     public void renderWorld(Camera camera) {
-        Matrix4f vm, m = new Matrix4f();
+        Matrix4f m = new Matrix4f();
         m.setIdentity();
 
         /* SKYSPHERE */
         PerformanceMonitor.startActivity("Render Sky");
-        vm = camera.getNormalizedViewMatrix();
-
-        _skysphere.render(m, vm);
+        camera.setNormalized(true);
+        _skysphere.render(m, camera);
+        camera.setNormalized(false);
         PerformanceMonitor.endActivity();
 
         /* WORLD RENDERING */
         PerformanceMonitor.startActivity("Render World");
-        vm = camera.getViewMatrix();
 
         if (Config.getInstance().isDebugCollision()) {
             renderDebugCollision(camera);
@@ -520,7 +520,7 @@ public final class WorldRenderer implements Updatable {
          * FIRST RENDER PASS: OPAQUE ELEMENTS
          */
         while (_renderQueueChunksOpaque.size() > 0)
-            renderChunk(_renderQueueChunksOpaque.poll(), ChunkMesh.RENDER_PHASE.OPAQUE, m, vm);
+            renderChunk(_renderQueueChunksOpaque.poll(), ChunkMesh.RENDER_PHASE.OPAQUE, m, camera);
 
         PerformanceMonitor.endActivity();
 
@@ -533,7 +533,7 @@ public final class WorldRenderer implements Updatable {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         while (_renderQueueChunksSortedBillboards.size() > 0)
-            renderChunk(_renderQueueChunksSortedBillboards.poll(), ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, m, vm);
+            renderChunk(_renderQueueChunksSortedBillboards.poll(), ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, m, camera);
 
         PerformanceMonitor.endActivity();
 
@@ -554,10 +554,10 @@ public final class WorldRenderer implements Updatable {
 
                 if (j == 0) {
                     glColorMask(false, false, false, false);
-                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, m, vm);
+                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, m, camera);
                 } else {
                     glColorMask(true, true, true, true);
-                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, m, vm);
+                    renderChunk(c, ChunkMesh.RENDER_PHASE.WATER_AND_ICE, m, camera);
                 }
             }
         }
@@ -565,7 +565,7 @@ public final class WorldRenderer implements Updatable {
         PerformanceMonitor.startActivity("Render Transparent");
 
         while (_renderQueueTransparent.size() > 0)
-            _renderQueueTransparent.poll().render(m, vm);
+            _renderQueueTransparent.poll().render(m, camera);
         for (RenderSystem renderer : _systemManager.iterateRenderSubscribers()) {
             renderer.renderTransparent();
         }
@@ -595,29 +595,26 @@ public final class WorldRenderer implements Updatable {
         shader = ShaderManager.getInstance().getShaderProgram("block");
         shader.setFloat("clipHeight", 31.5f);
 
-        Matrix4f vm, m = new Matrix4f();
+        Matrix4f m = new Matrix4f();
         m.setIdentity();
 
-        PerformanceMonitor.startActivity("Render Sky");
-        vm = camera.getReflectedNormalizedViewMatrix();
-
-        _skysphere.render(m, vm);
-
-        vm = camera.getReflectedViewMatrix();
+        camera.setNormalized(true);
+        _skysphere.render(m, camera);
+        camera.setNormalized(false);
 
         glEnable(GL_LIGHT0);
 
         for (Chunk c : _renderQueueChunksOpaque)
-            renderChunk(c, ChunkMesh.RENDER_PHASE.OPAQUE, m, vm);
+            renderChunk(c, ChunkMesh.RENDER_PHASE.OPAQUE, m, camera);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         for (Chunk c : _renderQueueChunksSortedBillboards)
-            renderChunk(c, ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, m, vm);
+            renderChunk(c, ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT, m, camera);
 
         for (Renderable g : _renderQueueTransparent)
-            g.render(m, vm);
+            g.render(m, camera);
 
         glDisable(GL_BLEND);
         glDisable(GL_LIGHT0);
@@ -628,7 +625,7 @@ public final class WorldRenderer implements Updatable {
         shader.setFloat("clipHeight", 0.0f);
     }
 
-    private void renderChunk(Chunk chunk, ChunkMesh.RENDER_PHASE phase, Matrix4f m, Matrix4f vm) {
+    private void renderChunk(Chunk chunk, ChunkMesh.RENDER_PHASE phase, Matrix4f m,Camera cam) {
         if (chunk.getChunkState() == Chunk.State.COMPLETE && chunk.getMesh() != null) {
             ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("chunk");
             // Transfer the world offset of the chunk to the shader for various effects
@@ -639,11 +636,9 @@ public final class WorldRenderer implements Updatable {
 
             Matrix4f viewMatrix = new Matrix4f();
             viewMatrix.setIdentity();
-
             viewMatrix.setTranslation(new Vector3f((float) (chunk.getPos().x * Chunk.SIZE_X - cameraPosition.x), (float) (chunk.getPos().y * Chunk.SIZE_Y - cameraPosition.y), (float) (chunk.getPos().z * Chunk.SIZE_Z - cameraPosition.z)));
-            viewMatrix.mul(vm, viewMatrix);
 
-            shader.setAndCalcRenderingMatrices(m, viewMatrix, getActiveCamera().getProjectionMatrix());
+            shader.setAndCalcRenderingMatrices(m, cam);
 
             for (int i = 0; i < VERTICAL_SEGMENTS; i++) {
                 if (!chunk.getMesh()[i].isEmpty()) {
@@ -680,7 +675,11 @@ public final class WorldRenderer implements Updatable {
     public void update(float delta) {
         PerformanceMonitor.startActivity("Cameras");
         animateSpawnCamera(delta);
-        _spawnCamera.update(delta);
+
+        if (_activeCamera != null) {
+            _activeCamera.update(delta);
+        }
+
         PerformanceMonitor.endActivity();
 
         PerformanceMonitor.startActivity("Update Tick");
@@ -699,11 +698,6 @@ public final class WorldRenderer implements Updatable {
         PerformanceMonitor.startActivity("Skysphere");
         _skysphere.update(delta);
         PerformanceMonitor.endActivity();
-
-        if (_activeCamera != null) {
-            _activeCamera.update(delta);
-        }
-
 
         // And finally fire any active events
         PerformanceMonitor.startActivity("Fire Events");

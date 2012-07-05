@@ -226,10 +226,10 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
         // TODO: don't hardset eye position
         cameraPosition.add(new Vector3d(position), new Vector3d(0, 0.6f, 0));
 
-        playerCamera.getPosition().set(cameraPosition);
+        playerCamera.setPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
         Vector3f viewDir = new Vector3f(0, 0, 1);
         QuaternionUtil.quatRotate(rotation, viewDir, viewDir);
-        playerCamera.getViewingDirection().set(viewDir);
+        playerCamera.setViewDirection(viewDir.x, viewDir.y, viewDir.z);
 
         float stepDelta = charMovementComp.footstepDelta - lastStepDelta;
         if (stepDelta < 0) stepDelta += charMovementComp.distanceBetweenFootsteps;

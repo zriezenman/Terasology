@@ -69,31 +69,29 @@ public class MiniaturizerSystem implements UpdateSubscriberSystem, RenderSystem 
         for (EntityRef entity : entityManager.iteratorEntities(MiniaturizerComponent.class)) {
             MiniaturizerComponent min = entity.getComponent(MiniaturizerComponent.class);
 
-
-            Matrix4f vm = CoreRegistry.get(WorldRenderer.class).getActiveCamera().getViewMatrix();
             Matrix4f m = new Matrix4f();
             m.setIdentity();
 
-            min.blockGrid.render(m, vm);
+            min.blockGrid.render(m, CoreRegistry.get(WorldRenderer.class).getActiveCamera());
 
             if (min.chunkMesh == null || min.renderPosition == null)
                 continue;
 
-            glPushMatrix();
-            Vector3d cameraPosition = CoreRegistry.get(WorldRenderer.class).getActiveCamera().getPosition();
-            GL11.glTranslated(min.renderPosition.x - cameraPosition.x, min.renderPosition.y - cameraPosition.y, min.renderPosition.z - cameraPosition.z);
-
-            glScalef(MiniaturizerComponent.SCALE, MiniaturizerComponent.SCALE, MiniaturizerComponent.SCALE);
-            glRotatef(min.orientation, 0, 1 ,0);
-
-            ShaderManager.getInstance().enableShader("chunk");
-            ShaderManager.getInstance().getShaderProgram("chunk").setFloat("blockScale", MiniaturizerComponent.SCALE);
-
-            min.chunkMesh.render(ChunkMesh.RENDER_PHASE.OPAQUE);
-            min.chunkMesh.render(ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT);
-            min.chunkMesh.render(ChunkMesh.RENDER_PHASE.WATER_AND_ICE);
-            glPopMatrix();
-
+            // TODO: FIX RENDERING
+//            glPushMatrix();
+//            Vector3d cameraPosition = CoreRegistry.get(WorldRenderer.class).getActiveCamera().getPosition();
+//            GL11.glTranslated(min.renderPosition.x - cameraPosition.x, min.renderPosition.y - cameraPosition.y, min.renderPosition.z - cameraPosition.z);
+//
+//            glScalef(MiniaturizerComponent.SCALE, MiniaturizerComponent.SCALE, MiniaturizerComponent.SCALE);
+//            glRotatef(min.orientation, 0, 1 ,0);
+//
+//            ShaderManager.getInstance().enableShader("chunk");
+//            ShaderManager.getInstance().getShaderProgram("chunk").setFloat("blockScale", MiniaturizerComponent.SCALE);
+//
+//            min.chunkMesh.render(ChunkMesh.RENDER_PHASE.OPAQUE);
+//            min.chunkMesh.render(ChunkMesh.RENDER_PHASE.BILLBOARD_AND_TRANSLUCENT);
+//            min.chunkMesh.render(ChunkMesh.RENDER_PHASE.WATER_AND_ICE);
+//            glPopMatrix();
         }
 
     }
