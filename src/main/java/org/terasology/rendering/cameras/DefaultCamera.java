@@ -71,10 +71,6 @@ public class DefaultCamera extends Camera {
                 vm.mul(reflectionMatrix);
             }
 
-            if (_local) {
-
-            }
-
             return vm;
         }
     }

@@ -321,9 +321,7 @@ public class BulletPhysicsRenderer implements Renderable, Updatable {
                 else if (br.getCollisionShape() == _blockShapeQuarter)
                     modelMatrix.setScale(0.25f);
 
-                cam.setLocal(true);
                 block.renderWithLightValue(_parent.getRenderingLightValueAt(t.origin), modelMatrix, cam);
-                cam.setLocal(false);
             }
         }
     }

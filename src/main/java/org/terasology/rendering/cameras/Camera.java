@@ -15,8 +15,6 @@
  */
 package org.terasology.rendering.cameras;
 
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
 import org.terasology.logic.manager.Config;
 import org.terasology.math.TeraMath;
 import org.terasology.model.structures.ViewFrustum;
@@ -50,7 +48,7 @@ public abstract class Camera {
 
     protected boolean _dirty = true;
 
-    protected boolean _reflected = false, _normalized = false, _local = false;
+    protected boolean _reflected = false, _normalized = false;
 
     /* VIEW FRUSTUM */
     protected final ViewFrustum _viewFrustum = new ViewFrustum();
@@ -159,11 +157,6 @@ public abstract class Camera {
 
     public void setNormalized(boolean r) {
         _normalized = r;
-        _dirty = true;
-    }
-
-    public void setLocal(boolean r) {
-        _local = r;
         _dirty = true;
     }
 }
