@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Terasology : An open source, voxel-based game." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Terasology</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/MovingBlocks/Terasology">View on GitHub</a>
+
+          <h1 id="project_title">Terasology</h1>
+          <h2 id="project_tagline">An open source, voxel-based game.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/MovingBlocks/Terasology/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/MovingBlocks/Terasology/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>Terasology</h1>
+
+<p><a href="https://github.com/MovingBlocks/Terasology/downloads">Download now from GitHub</a> - Hello Gronkh users and internet at large!</p>
+
+<p><img src="https://github.com/MovingBlocks/Terasology/raw/develop/src/main/resources/org/terasology/data/textures/loadingBackground.png" alt="Terasology" title="Terasology"></p>
+
+<p>Terasology is a game that pays ample tribute to <a href="http://www.minecraft.net">Minecraft</a> in initial look and origin, but stakes out its own niche by adopting the NPC-helper and caretaker feel from such games as <a href="http://www.bay12games.com/dwarves">Dwarf Fortress</a> and <a href="http://en.wikipedia.org/wiki/Dungeon_Keeper">Dungeon Keeper</a>, while striving for added depth and sophistication.</p>
+
+<p>Terasology is an open source project started by Benjamin "begla" Glatzel to research procedural terrain generation and efficient rendering techniques in Java using the <a href="http://lwjgl.org">LWJGL</a>. The engine uses a block-based voxel-like approach as seen in Minecraft. After proving itself as a solid tech demo begla was joined at first by Anton "small-jeeper" Kireev and Rasmus "Cervator" Praestholm and a full-fledged game concept was born.</p>
+
+<p>The creators of Terasology are a diverse mix of software developers, game testers, graphic artists, and musicians. Get involved by checking out our <a href="http://forum.movingblocks.net/index.php">Community Portal</a>, our blog <a href="http://blog.movingblocks.net">Moving Blocks!</a>, and our <a href="http://www.facebook.com/pages/Blockmania/248329655219905">Facebook Page</a>.</p>
+
+<p>Terasology is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache 2.0 License</a> and available in source code form at <a href="https://github.com/MovingBlocks/Terasology">GitHub</a>.</p>
+
+<h2>Setup</h2>
+
+<p>Terasology requires the latest version of Oracle's <a href="http://www.java.com/de/download/">Java Virtual Machine (JVM)</a>. Also make sure that your graphics card driver is up to date.</p>
+
+<p>You can use one of the default launch scripts to start the game. The scripts will setup your JVM to allocate up to 1024 MB of heap space. Under Linux and Mac OS X the run script needs the access permission "Execute" to run properly: "chmod +x script.sh".</p>
+
+<h2>Controls</h2>
+
+<ul>
+<li>[W,A,S,D]               - Movement</li>
+<li>[E]                     - Activate (Chest, TNT, etc)</li>
+<li>[Space]                 - Jump</li>
+<li>[Double Space]          - God mode (fly / no-clip)</li>
+<li>[Shift]                 - Hold to run</li>
+<li>[Left click]            - Activate left click action (default = place block)</li>
+<li>[Right click]           - Activate right click action (default = remove block)</li>
+<li>[Mouse wheel up/down]   - Cycle through toolbar slots</li>
+<li>[1,..,0]                - Change the active toolbar slot</li>
+<li>[I]                     - Toggle inventory screen</li>
+<li>[F]                     - Toggle viewing distance (near, moderate, far, ultra)</li>
+<li>[Tab]                   - Toggle developer console</li>
+<li>[F3]                    - Toggle debug mode and information</li>
+<li>[F4]                    - Different debug metrics</li>
+<li>[K]                     - Don't try this :-)</li>
+<li>[Escape]                - Show/hide the game menu screen</li>
+</ul><h2>Debug features </h2>
+
+<p>Only works when the F3 debug mode is enabled (and may come and go)</p>
+
+<ul>
+<li>[Arrow up/down]         - Adjust the current time in small steps</li>
+<li>[P]                     - Activate first-person player camera</li>
+<li>[O]                     - Activate animated spawning point camera</li>
+</ul><h2>Examples tools </h2>
+
+<p>May move slot or disappear as development continues</p>
+
+<ul>
+<li>Companion Cube          - Poorly hidden easter egg almost guaranteed to never talk with or attempt to stab you</li>
+<li>Torch                   - Shiny! Place with left click</li>
+<li>Pickaxe / shovel        - Faster right-click removal of some blocks</li>
+<li>Blueprint               - Left click one block, then another, then somewhere else to "clone" your selection (right-click resets)</li>
+<li>Explosion tool          - Big bada boom!</li>
+<li>Railgun                 - Bigger bada boom, in a straight line!</li>
+<li>Debug tool              - Experimental</li>
+</ul><h2>Example console commands </h2>
+
+<p>Press Tab to toggle the in-game console (all you'll see is a tiny underscore cursor when active, just start typing!)</p>
+
+<ul>
+<li>giveBlock "Water"                 - Gives 16 water blocks</li>
+<li>giveBlock "IronPyrites", 42       - Gives 42 Iron Pyrite (Fool's Gold) blocks</li>
+<li>giveBlock "Chest"                 - Gives you a Chest block you can place, activate ('E'), put stuff in, destroy, pick up, place elsewhere, find same stuff in it!</li>
+<li>giveBlock "Tnt"                   - Gives you 16 TNT blocks you can place and activate ('E') to blow up</li>
+<li>teleport 42, 42, 42               - Warps the player to x = 42, y = 42, z = 42</li>
+<li>fullHealth                        - Fully restores the player's health</li>
+<li>gotoWorld "GhostTown"             - Loads the world "GhostTown" if present, otherwise initializes a new world "GhostTown" with a randomized seed value</li>
+<li>gotoWorld "GhostTown", "Pie!"     - Loads the world "GhostTown" if present, otherwise initializes a new world "GhostTown" with the seed value "Pie!"</li>
+</ul><h2>Options</h2>
+
+<ul>
+<li>Graphics Quality        - Defaults to support somewhat low-end computers, can be bumped up for very snazzy effects (possibly even <em>too</em> shiny!)</li>
+<li>Viewing Distance        - How many chunks to load around the player for display</li>
+<li>Field of View           - Special effect related to distance and visual warping (more distant with greater value)</li>
+</ul><p>Many more options are available via config file but not yet exposed in the GUI</p>
+
+<h2>Building and running source</h2>
+
+<ul>
+<li> Download / clone the source from GitHub</li>
+<li> To prepare for IntelliJ run: $ gradlew idea</li>
+<li> To prepare for Eclipse run: $ gradlew eclipse</li>
+<li> To run from the command line: $ gradlew run</li>
+<li> For more tasks: $ gradlew tasks</li>
+</ul><p>You may also need to tweak IDE settings further for your convenience. See <a href="http://wiki.movingblocks.net/bin/view/Main/DevSetup">Dev Setup</a> in our wiki for more details.</p>
+
+<h1>Credits</h1>
+
+<p>This is an incomplete list and the team is constantly growing. See <a href="http://wiki.movingblocks.net/bin/view/Main/DevTeam">Dev Team</a> in the wiki for the latest updates</p>
+
+<h2>Contributors</h2>
+
+<ul>
+<li>Benjamin "begla" Glatzel</li>
+<li>Anton "small-jeeper" Kireev</li>
+<li>Rasmus "Cervator" Praestholm</li>
+<li>Immortius</li>
+<li>Richard "rapodaca" Apodaca</li>
+<li>Kai Kratz</li>
+<li>t3hk0d3</li>
+</ul><h2>Soundtrack and Sound Effects</h2>
+
+<ul>
+<li>Sunrise, Afternoon and Sunset composed by Karina Kireev.</li>
+<li>Dimlight, Resurface and Other Side composed and produced by Exile.</li>
+<li>Sound effects created by Exile.</li>
+</ul><h1>Additional Notes</h1>
+
+<p>Terasology's base graphics use the awesome <strong><a href="http://www.carrotcakestudios.co.uk/gmcraft/">Good Morning Craft!</a></strong> texture pack by Louis Durrant. Make sure to visit his <a href="http://www.carrotcakestudios.co.uk/">homepage</a> and support his work.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Terasology maintained by <a href="https://github.com/MovingBlocks">MovingBlocks</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
