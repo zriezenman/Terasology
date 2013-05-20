@@ -34,13 +34,7 @@ import org.terasology.entitySystem.In;
 import org.terasology.entitySystem.ReceiveEvent;
 import org.terasology.entitySystem.RegisterComponentSystem;
 import org.terasology.entitySystem.event.RemovedComponentEvent;
-import org.terasology.events.FootstepEvent;
-import org.terasology.events.FromLiquidEvent;
-import org.terasology.events.HorizontalCollisionEvent;
-import org.terasology.events.IntoLiquidEvent;
-import org.terasology.events.JumpEvent;
-import org.terasology.events.SwimEvent;
-import org.terasology.events.VerticalCollisionEvent;
+import org.terasology.events.*;
 import org.terasology.math.Vector3fUtil;
 import org.terasology.physics.BulletPhysics;
 import org.terasology.physics.CollisionGroup;
@@ -142,7 +136,7 @@ public final class BulletCharacterMovementSystem implements UpdateSubscriberSyst
             updatePosition(delta, entity, location, movementComp);
             updateSwimStatus(entity, location,  movementComp);
             updateClimbingStatus(location,  movementComp);
-
+            updateLeafStatus(entity, location, movementComp);
             entity.saveComponent(location);
             entity.saveComponent(movementComp);
         }
@@ -155,6 +149,31 @@ public final class BulletCharacterMovementSystem implements UpdateSubscriberSyst
      * @param location
      * @param movementComp
      */
+    private void updateLeafStatus(final EntityRef entity,LocationComponent location, CharacterMovementComponent movementComp) {
+        Vector3f worldPos = location.getWorldPosition();
+        boolean topFoliage = false;
+        boolean bottomFoliage = false;
+        Vector3f top = new Vector3f(worldPos);
+        Vector3f bottom = new Vector3f(worldPos);
+        top.y += 0.25f * movementComp.height;
+        bottom.y -= 0.25f * movementComp.height;
+        topFoliage = worldProvider.getBlock(top).isLeaf();
+        final Block bottomBlock= worldProvider.getBlock(bottom);
+        bottomFoliage = bottomBlock.isLeaf();
+        boolean newFall = topFoliage && bottomFoliage;
+        if (!newFall && movementComp.isLeaf && movementComp.getVelocity().y > 0) {
+            float len = movementComp.getVelocity().length();
+            movementComp.getVelocity().scale((len + 8) / len);
+        }
+        if(movementComp.isLeaf != newFall){
+            if (movementComp.isLeaf) {
+                entity.send(new FromLeafEvent(bottomBlock, worldPos));
+            } else {
+                entity.send(new IntoLeafEvent(bottomBlock, worldPos));
+            }
+        }
+        movementComp.isLeaf = newFall;
+    }
     private void updateSwimStatus(final EntityRef entity,LocationComponent location, CharacterMovementComponent movementComp) {
         Vector3f worldPos = location.getWorldPosition();
         boolean topUnderwater = false;
@@ -168,7 +187,6 @@ public final class BulletCharacterMovementSystem implements UpdateSubscriberSyst
         final Block bottomBlock= worldProvider.getBlock(bottom);
         bottomUnderwater = bottomBlock.isLiquid();
         boolean newSwimming = topUnderwater && bottomUnderwater;
-
         // Boost when leaving water
         if (!newSwimming && movementComp.isSwimming && movementComp.getVelocity().y > 0) {
             float len = movementComp.getVelocity().length();
@@ -219,6 +237,8 @@ public final class BulletCharacterMovementSystem implements UpdateSubscriberSyst
             swim(delta, entity, location, movementComp);
         } else if ( movementComp.isClimbing ) {
             climb(delta, entity, location, movementComp);
+        } else if ( movementComp.isLeaf ) {
+            leaf(delta, entity, location, movementComp);
         }else{
             walk(delta, entity, location, movementComp);
         }
@@ -334,7 +354,7 @@ public final class BulletCharacterMovementSystem implements UpdateSubscriberSyst
             Vector3f bottom = new Vector3f(top);
             top.y += 0.25f * movementComp.height;
             bottom.y -= 0.25f * movementComp.height;
-            if(worldProvider.getBlock(top).isLiquid() && speed > movementComp.maxWaterSpeed/4){
+            if(worldProvider.getBlock(top).isLiquid() && speed > movementComp.maxWaterSpeed/4) {
             	entity.send(new SwimEvent(worldProvider.getBlock(bottom),location.getWorldPosition()));
             }
         }
@@ -347,6 +367,60 @@ public final class BulletCharacterMovementSystem implements UpdateSubscriberSyst
             location.getLocalRotation().set(axisAngle);
         }
     }
+    private void leaf(float delta, EntityRef entity, LocationComponent location, CharacterMovementComponent movementComp) {
+        Vector3f desiredVelocity = new Vector3f(movementComp.getDrive());
+        float maxSpeed = movementComp.maxLeafSpeed;
+        if (movementComp.isRunning) {
+            maxSpeed *= movementComp.runFactor;
+        }
+        desiredVelocity.scale(maxSpeed);
+
+        desiredVelocity.y -= UNDERWATER_GRAVITY;
+
+        // Modify velocity towards desired, up to the maximum rate determined by friction
+        Vector3f velocityDiff = new Vector3f(desiredVelocity);
+        velocityDiff.sub(movementComp.getVelocity());
+        velocityDiff.scale(Math.min(UNDERWATER_INERTIA * delta, 1.0f));
+
+        movementComp.getVelocity().x += velocityDiff.x;
+        movementComp.getVelocity().y += velocityDiff.y;
+        movementComp.getVelocity().z += velocityDiff.z;
+
+        // Slow down due to friction
+        float speed = movementComp.getVelocity().length();
+        if (speed > movementComp.maxLeafSpeed) {
+            movementComp.getVelocity().scale((speed - 4 * (speed - movementComp.maxWaterSpeed) * delta) / speed);
+        }
+
+        Vector3f moveDelta = new Vector3f(movementComp.getVelocity());
+        moveDelta.scale(delta);
+
+        MoveResult moveResult = move(location.getWorldPosition(), moveDelta, 0, 0.1f, movementComp.collider);
+        Vector3f distanceMoved = new Vector3f(moveResult.finalPosition);
+        distanceMoved.sub(location.getWorldPosition());
+
+        location.setWorldPosition(moveResult.finalPosition);
+        if (distanceMoved.length() > 0){
+            entity.send(new MovedEvent(distanceMoved, moveResult.finalPosition));
+
+            Vector3f top = new Vector3f(location.getWorldPosition());
+            Vector3f bottom = new Vector3f(top);
+            top.y += 0.25f * movementComp.height;
+            bottom.y -= 0.25f * movementComp.height;
+            if(worldProvider.getBlock(top).isLeaf() && speed > movementComp.maxLeafSpeed/4) { //is something goes wrong look here
+                entity.send(new LeafEvent(worldProvider.getBlock(bottom),location.getWorldPosition()));
+            }
+        }
+
+        movementComp.collider.setWorldTransform(new Transform(new Matrix4f(new Quat4f(0, 0, 0, 1), moveResult.finalPosition, 1.0f)));
+
+        if (movementComp.faceMovementDirection && distanceMoved.lengthSquared() > 0.01f) {
+            float yaw = (float) Math.atan2(distanceMoved.x, distanceMoved.z);
+            AxisAngle4f axisAngle = new AxisAngle4f(0, 1, 0, yaw);
+            location.getLocalRotation().set(axisAngle);
+        }
+    }
+
 
     private void ghost(float delta, EntityRef entity, LocationComponent location, CharacterMovementComponent movementComp) {
         Vector3f desiredVelocity = new Vector3f(movementComp.getDrive());

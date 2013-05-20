@@ -21,6 +21,8 @@
 {
     "basedOn" : "engine:leaf",
     "tile" : "engine:GreenLeaf",
+    "leaf : true,
+    "penetrable" : true,
     "colorOffset" : [2.0, 0.0, 0.5, 1.0],
 	"waving" : true
 }

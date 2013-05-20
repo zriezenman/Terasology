@@ -34,6 +34,7 @@ import com.google.common.collect.Maps;
  */
 public class BlockDefinition {
     public String displayName = "";
+    public boolean leaf = false;
     public boolean liquid = false;
     public boolean climbable = false;
     public boolean craftPlace = true;

@@ -140,6 +140,7 @@ public class Block {
 
     // Overall behavioural
     private boolean liquid     = false;
+    private boolean leaf     = false;
     private boolean climbable  = false;
     private boolean attachmentAllowed = true;
     private boolean replacementAllowed = false;
@@ -256,6 +257,12 @@ public class Block {
      *
      * @return Whether this block is a liquid
      */
+    public boolean isLeaf() {
+        return leaf;
+    }
+    public void setLeaf(boolean leaf) {
+        this.leaf = leaf;
+    }
     public boolean isLiquid() {
         return liquid;
     }

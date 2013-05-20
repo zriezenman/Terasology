@@ -20,5 +20,7 @@
  */
 {
     "basedOn" : "engine:leaf",
+	"leaf" : true,
+	"penetrable" : true,
 	"waving" : true
 }

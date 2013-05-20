@@ -40,6 +40,7 @@ public final class CharacterMovementComponent implements Component {
     // Speed settings
     public float maxGroundSpeed = 5.0f;
     public float maxWaterSpeed = 2.0f;
+    public float maxLeafSpeed = 2.0f;
     public float maxClimbSpeed = 3.0f;
     public float maxGhostSpeed = 5.0f;
     public float runFactor = 1.5f;
@@ -62,7 +63,7 @@ public final class CharacterMovementComponent implements Component {
     public boolean isClimbing = false;
     public boolean isGrounded = false;
     public boolean isRunning = false;
-
+    public boolean isLeaf = false;
     private Vector3f velocity = new Vector3f();
 
     // Movement inputs - desired direction, etc

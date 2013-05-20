@@ -556,6 +556,7 @@ public class BlockLoader {
     private Block createRawBlock(BlockDefinition def, String defaultName) {
         Block block = new Block();
         block.setLiquid(def.liquid);
+        block.setLeaf(def.leaf);
         block.setClimbable(def.climbable);
         block.setHardness(def.hardness);
         block.setAttachmentAllowed(def.attachmentAllowed);

@@ -311,7 +311,7 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
     private void updateMovement(LocalPlayerComponent localPlayerComponent, CharacterMovementComponent characterMovementComponent, LocationComponent location) {
         Vector3f relMove = new Vector3f(relativeMovement);
         relMove.y = 0;
-        if (characterMovementComponent.isGhosting || characterMovementComponent.isSwimming) {
+        if (characterMovementComponent.isGhosting || characterMovementComponent.isSwimming || characterMovementComponent.isLeaf) {
             Quat4f viewRot = new Quat4f();
             QuaternionUtil.setEuler(viewRot, TeraMath.DEG_TO_RAD * localPlayerComponent.viewYaw, TeraMath.DEG_TO_RAD * localPlayerComponent.viewPitch, 0);
             QuaternionUtil.quatRotate(viewRot, relMove, relMove);
